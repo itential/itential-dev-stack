@@ -1,0 +1,98 @@
+# scripts dir
+/image_scripts/
+
+# env files
+.env
+.env.local
+!.env.example
+
+# ansible vualt files
+**/.vault_password_file
+
+# volume data dirs
+/volumes/gateway4/data/*
+!/volumes/gateway4/data/.gitkeep
+
+/volumes/gateway4/scripts/*
+!/volumes/gateway4/scripts/.gitkeep
+
+/volumes/gateway4/ssl/*
+!/volumes/gateway4/ssl/.gitkeep
+
+/volumes/gateway4/terraform/*
+!/volumes/gateway4/terraform/.gitkeep
+
+# gw4 playbooks - .gitkeep tracked, example playbooks tracked
+# user-added playbooks should be added to .gitignore manually if needed
+
+/volumes/platform/adapters/*
+!/volumes/platform/adapters/.gitkeep
+
+/volumes/platform/logs/*
+!/volumes/platform/logs/.gitkeep
+
+/volumes/platform/ssl/*
+!/volumes/platform/ssl/.gitkeep
+
+/volumes/gateway5/data/*
+!/volumes/gateway5/data/.gitkeep
+
+/volumes/gateway5/scripts/*
+!/volumes/gateway5/scripts/.gitkeep
+
+/volumes/gateway5/certificates/*
+!/volumes/gateway5/certificates/.gitkeep
+
+# mongo data
+/dependencies/mongodb-data/*
+!/dependencies/mongodb-data/.gitkeep
+
+# os generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ide things
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# claude code things
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# temp files
+*.tmp
+*.temp
+
+# ssl certificates / keys (global fallback)
+*.pem
+*.key
+*.crt
+*.cert
+
+# db files
+*.db
+*.sqlite
+*.sqlite3
+
+# backup files
+*.bak
+*.backup
+*.orig
+
+# app logs
+*.log
+
+# container override files
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# node modules
+node_modules/
