@@ -164,6 +164,26 @@ if [ -d "$PROJECT_ROOT/volumes/gateway4/scripts" ]; then
     log_info "Gateway4 scripts: permissions set"
 fi
 
+# set volume ownership to match container UIDs
+# platform and gateway4 run as UID 1001, gateway5 runs as UID 100
+PLATFORM_DIRS=("$PROJECT_ROOT/volumes/platform/logs" "$PROJECT_ROOT/volumes/platform/adapters")
+GATEWAY4_DIRS=("$PROJECT_ROOT/volumes/gateway4/data" "$PROJECT_ROOT/volumes/gateway4/scripts" "$PROJECT_ROOT/volumes/gateway4/playbooks" "$PROJECT_ROOT/volumes/gateway4/terraform")
+GATEWAY5_DIRS=("$PROJECT_ROOT/volumes/gateway5/data")
+
+if command -v sudo &>/dev/null; then
+    for dir in "${PLATFORM_DIRS[@]}" "${GATEWAY4_DIRS[@]}"; do
+        [ -d "$dir" ] && sudo chown -R 1001:1001 "$dir" 2>/dev/null || true
+    done
+    log_info "Platform/Gateway4 volumes: ownership set (UID 1001)"
+
+    for dir in "${GATEWAY5_DIRS[@]}"; do
+        [ -d "$dir" ] && sudo chown -R 100:101 "$dir" 2>/dev/null || true
+    done
+    log_info "Gateway5 volumes: ownership set (UID 100)"
+else
+    log_warn "sudo not available, skipping volume ownership (may cause permission issues)"
+fi
+
 log_section "starting services"
 
 log_info "Starting all services..."
