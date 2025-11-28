@@ -1,0 +1,261 @@
+# Itential Dev Stack - Unified Configuration
+#
+# Profiles:
+#   deps     - MongoDB + Redis only
+#   platform - MongoDB + Redis + Platform (most common)
+#   gateway4 - Automation Gateway 4
+#   gateway5 - Automation Gateway 5
+#   full     - All services
+#
+# Usage:
+#   make setup                               # First-time setup (recommended)
+#   make up                                  # Start all services
+#   docker compose --profile platform up -d  # Platform only
+
+networks:
+  default:
+    name: itential
+
+services:
+  # ==========================================================================
+  # DEPENDENCIES
+  # ==========================================================================
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:${MONGO_VERSION:-8.0}
+    profiles: ["deps", "platform", "full"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - type: bind
+        source: ./dependencies/mongodb-data
+        target: /data/db
+    environment:
+      MONGO_INITDB_DATABASE: itential
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    sysctls:
+      net.core.somaxconn: 511
+    restart: unless-stopped
+
+  redis:
+    container_name: redis
+    image: redis:${REDIS_VERSION:-7.4}
+    profiles: ["deps", "platform", "full"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    sysctls:
+      net.core.somaxconn: 511
+    restart: unless-stopped
+
+  # ==========================================================================
+  # ITENTIAL PLATFORM
+  # ==========================================================================
+
+  platform:
+    container_name: platform
+    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-platform-config-lcm:${PLATFORM_VERSION:-6}
+    platform: linux/amd64
+    profiles: ["platform", "full"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PLATFORM_PORT:-3000}:3000"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - type: bind
+        source: ./volumes/platform/adapters
+        target: /opt/itential/platform/services/custom
+      - type: bind
+        source: ./volumes/platform/logs
+        target: /var/log/itential
+      - type: bind
+        source: ./volumes/platform/logs
+        target: /opt/itential/logs
+      - type: bind
+        source: ./volumes/platform/ssl
+        target: /etc/ssl/platform
+        read_only: true
+    environment:
+
+      # security
+      ITENTIAL_ENCRYPTION_KEY: ${ITENTIAL_ENCRYPTION_KEY:?ITENTIAL_ENCRYPTION_KEY is required - run make setup}
+
+      # mongodb
+      ITENTIAL_MONGO_URL: "mongodb://mongodb:27017"
+      ITENTIAL_MONGO_DB_NAME: "itential"
+      ITENTIAL_MONGO_AUTH_DB: "itential"
+      ITENTIAL_MONGO_TLS_ENABLED: "false"
+
+      # redis
+      ITENTIAL_REDIS_HOST: "redis"
+      ITENTIAL_REDIS_PORT: "6379"
+
+      # web server
+      ITENTIAL_WEBSERVER_HTTP_PORT: 3000
+      ITENTIAL_WEBSERVER_HTTPS_PORT: 3443
+      ITENTIAL_WEBSERVER_HTTPS_KEY: "/etc/ssl/platform/key.pem"
+      ITENTIAL_WEBSERVER_HTTPS_CERT: "/etc/ssl/platform/cert.pem"
+
+      # logging
+      ITENTIAL_LOG_LEVEL: ${LOG_LEVEL:-debug}
+      ITENTIAL_LOG_DIRECTORY: "/var/log/itential"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+
+  # ==========================================================================
+  # AUTOMATION GATEWAY 4
+  # ==========================================================================
+
+  gateway4:
+    container_name: gateway4
+    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway:${GATEWAY4_VERSION:-4.3.7}
+    platform: linux/amd64
+    profiles: ["gateway4", "full"]
+    command:
+      - "automation-gateway"
+      - "--sync-config"
+    ports:
+      - "127.0.0.1:${GATEWAY4_PORT:-8083}:8083"
+    volumes:
+      - type: bind
+        source: ./volumes/gateway4/data
+        target: /var/lib/automation-gateway
+      - type: bind
+        source: ./volumes/gateway4/scripts
+        target: /usr/share/automation-gateway/scripts
+      - type: bind
+        source: ./volumes/gateway4/playbooks
+        target: /usr/share/automation-gateway/ansible-playbooks
+      - type: bind
+        source: ./volumes/gateway4/terraform
+        target: /usr/share/automation-gateway
+      - type: bind
+        source: ./volumes/gateway4/ssl
+        target: /etc/ssl/gateway
+        read_only: true
+    environment:
+
+      # ansible settings
+      ANSIBLE_TIMEOUT: 900
+      ANSIBLE_HOST_KEY_CHECKING: "false"
+      ANSIBLE_PERSISTENT_COMMAND_TIMEOUT: 3600
+      ANSIBLE_PERSISTENT_CONNECT_TIMEOUT: 900
+      ANSIBLE_IGNORE_CERTS: "true"
+
+      # system
+      automation_gateway_port: 8083
+      automation_gateway_authentication_disabled: "false"
+      automation_gateway_authentication_max_sessions: 5000
+      automation_gateway_authentication_idle_timeout: 600
+      automation_gateway_password_reset_enabled: "false"
+
+      # logging
+      automation_gateway_global_log_directory: "/var/lib/automation-gateway"
+      automation_gateway_max_log_files: 5
+      automation_gateway_logging_level: ${LOG_LEVEL:-INFO}
+      automation_gateway_http_logging_level: ${LOG_LEVEL:-INFO}
+      automation_gateway_strict_args: "true"
+
+      # databases
+      automation_gateway_data_file: "sqlite:////var/lib/automation-gateway/automation-gateway.db"
+      automation_gateway_audit: "true"
+      automation_gateway_audit_retention_days: 30
+      automation_gateway_audit_db_file: "sqlite:////var/lib/automation-gateway/automation-gateway_audit.db"
+      automation_gateway_exec_history_db_file: "sqlite:////var/lib/automation-gateway/automation-gateway_exec_history.db"
+
+      # ansible
+      automation_gateway_ansible_enabled: "true"
+      automation_gateway_ansible_debug: "true"
+      automation_gateway_no_cleanup: "false"
+      automation_gateway_playbook_recursive: "true"
+      automation_gateway_playbook_path: '["/usr/share/automation-gateway/ansible-playbooks"]'
+      automation_gateway_module_path: '["/usr/share/ansible/modules","/usr/local/lib/python3.9/site-packages/ansible_collections/arista","/usr/local/lib/python3.9/site-packages/ansible_collections/cisco","/usr/local/lib/python3.9/site-packages/ansible_collections/f5networks","/usr/local/lib/python3.9/site-packages/ansible_collections/junipernetworks"]'
+      automation_gateway_collection_path: '["/usr/share/ansible/collections", "/opt/automation-gateway/.ansible/collections","/usr/share/automation-gateway/ansible/collections"]'
+      automation_gateway_role_path: '["/usr/share/ansible/roles"]'
+      automation_gateway_extended_device_role_path: '["/usr/local/lib/python3.9/site-packages/automation_gateway/integrations/extensible_device_roles/ansible_netmiko"]'
+
+      # scripts
+      automation_gateway_scripts_enabled: "true"
+      automation_gateway_script_recursive: "true"
+      automation_gateway_script_path: '["/usr/share/automation-gateway/scripts"]'
+
+      # feature flags (disabled by default)
+      automation_gateway_http_requests_enabled: "false"
+      automation_gateway_netconf_enabled: "false"
+      automation_gateway_netmiko_enabled: "false"
+      automation_gateway_nornir_enabled: "false"
+      automation_gateway_terraform_enabled: "false"
+      automation_gateway_grpc_enabled: "false"
+      automation_gateway_python_venv_enabled: "false"
+      automation_gateway_git_enabled: "true"
+      automation_gateway_vault_enabled: "false"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8083/api/v2.0/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ==========================================================================
+  # AUTOMATION GATEWAY 5
+  # ==========================================================================
+
+  gateway5:
+    container_name: gateway5
+    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway5:${GATEWAY5_VERSION:-5.1.0-amd64}
+    platform: linux/amd64
+    profiles: ["gateway5", "full"]
+    entrypoint:
+      - iagctl
+      - server
+    ports:
+      - "${GATEWAY5_PORT:-50051}:50051"
+    volumes:
+      - type: bind
+        source: ./volumes/gateway5/certificates
+        target: /etc/gateway/certificates
+        read_only: true
+      - type: bind
+        source: ./volumes/gateway5/data
+        target: /etc/gateway
+    environment:
+
+      # application
+      GATEWAY_APPLICATION_CLUSTER_ID: ${GATEWAY5_CLUSTER_ID:-cluster_1}
+      GATEWAY_APPLICATION_MODE: "server"
+      GATEWAY_APPLICATION_WORKING_DIR: "/etc/gateway"
+
+      # gw manager connection
+      GATEWAY_CONNECT_HOSTS: "platform:8080"
+      GATEWAY_CONNECT_CERTIFICATE_FILE: "/etc/gateway/certificates/gw-manager.pem"
+      GATEWAY_CONNECT_PRIVATE_KEY_FILE: "/etc/gateway/certificates/gw-manager-key.pem"
+      GATEWAY_CONNECT_INSECURE_TLS: "true"
+
+      # logging
+      GATEWAY_LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # server
+      GATEWAY_SERVER_USE_TLS: "false"
+      GATEWAY_SERVER_LISTEN_ADDRESS: "gateway5"
+    restart: unless-stopped
