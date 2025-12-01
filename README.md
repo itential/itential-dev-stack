@@ -119,6 +119,7 @@ PLATFORM_INIT_DELAY=15
 | Platform | http://localhost:3000 | admin / admin |
 | Gateway4 | http://localhost:8083 | admin@itential / admin |
 | Gateway5 | localhost:50051 (gRPC) | Use `iagctl` client |
+| OpenLDAP | localhost:3389 | cn=admin,dc=itential,dc=io / admin |
 | MongoDB | localhost:27017 | N/A |
 | Redis | localhost:6379 | N/A |
 
@@ -141,6 +142,9 @@ docker compose --profile gateway4 up -d
 
 # Add Gateway5 to running stack
 docker compose --profile gateway5 up -d
+
+# Platform with LDAP (for enterprise auth testing)
+docker compose --profile platform --profile ldap up -d
 ```
 
 ## 🪾 File Structure
@@ -166,10 +170,12 @@ itential-dev-stack/
 │   │   ├── scripts/        # Python scripts
 │   │   ├── ssl/            # SSL certificates
 │   │   └── terraform/      # Terraform modules
-│   └── gateway5/
-│       ├── certificates/   # Gateway Manager certs
-│       ├── data/           # Database files
-│       └── scripts/        # Custom scripts
+│   ├── gateway5/
+│   │   ├── certificates/   # Gateway Manager certs
+│   │   ├── data/           # Database files
+│   │   └── scripts/        # Custom scripts
+│   └── ldap/
+│       └── openldap.ldif   # LDAP users & groups
 └── dependencies/
     └── mongodb-data/       # MongoDB persistent data
 ```
@@ -211,6 +217,52 @@ chmod +x volumes/gateway4/scripts/*.py
 ```
 
 > **Note**: `make setup` handles this automatically.
+
+## 🔑 LDAP Authentication
+
+OpenLDAP is available as an optional service for testing enterprise LDAP authentication with Itential Platform.
+
+### Enabling LDAP (Automatic Configuration)
+
+Add to your `.env` file:
+```bash
+LDAP_ENABLED=true
+```
+
+Then run `make setup` - the LDAP adapter will be configured automatically via API.
+
+After setup completes, you can log in with any LDAP user:
+
+| User | Password | Access |
+|------|----------|--------|
+| admin@itential | admin | Full admin (all roles + Gateway Manager) |
+| builder@itential | builder | LDAP group: builders |
+| operator@itential | operator | LDAP group: operators |
+
+> **Note**: The `admin@itential` user automatically receives all roles from the local admin account and is added to `admin_group` for Gateway Manager access.
+
+### Manual LDAP Start (without auto-config)
+
+```bash
+# Start Platform with LDAP container only
+docker compose --profile platform --profile ldap up -d
+
+# Configure LDAP adapter manually
+./scripts/configure-ldap.sh
+```
+
+### LDAP Connection Details
+
+| Property | Value |
+|----------|-------|
+| Host (from containers) | openldap |
+| Host (from host) | localhost |
+| Port | 389 (container) / 3389 (host) |
+| Admin DN | cn=admin,dc=itential,dc=io |
+| Admin Password | admin |
+| Base DN | dc=itential,dc=io |
+
+For advanced LDAP configuration, see the [official documentation](https://docs.itential.com/docs/configuring-open-ldap-iap).
 
 ## 🔐 Gateway5 / Gateway Manager
 
