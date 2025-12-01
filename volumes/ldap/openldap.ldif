@@ -1,0 +1,47 @@
+# LDAP Bootstrap Configuration for Itential Dev Stack
+# Pre-configured users and groups for testing LDAP authentication
+
+# admins group
+dn: cn=admins,dc=itential,dc=io
+cn: admins
+member: cn=admin@itential,dc=itential,dc=io
+objectclass: groupOfNames
+
+# builders group
+dn: cn=builders,dc=itential,dc=io
+cn: builders
+member: cn=builder@itential,dc=itential,dc=io
+objectclass: groupOfNames
+
+# operators group
+dn: cn=operators,dc=itential,dc=io
+cn: operators
+member: cn=operator@itential,dc=itential,dc=io
+objectclass: groupOfNames
+
+# admin user (password: admin)
+dn: cn=admin@itential,dc=itential,dc=io
+cn: admin@itential
+userPassword: admin
+description: Itential Admin
+memberOf: cn=admins,dc=itential,dc=io
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+
+# builder user (password: builder)
+dn: cn=builder@itential,dc=itential,dc=io
+cn: builder@itential
+userPassword: builder
+description: Itential Builder
+memberOf: cn=builders,dc=itential,dc=io
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+
+# operator user (password: operator)
+dn: cn=operator@itential,dc=itential,dc=io
+cn: operator@itential
+userPassword: operator
+description: Itential Operator
+memberOf: cn=operators,dc=itential,dc=io
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
