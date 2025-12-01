@@ -29,3 +29,4 @@
 - [ ] Commits follow conventional format (`type: subject`)
 - [ ] No secrets or credentials committed
 - [ ] Documentation has been updated accordingly
+- [ ] PR has been labeled appropriately (`enhancement`, `bug`, `documentation`, `refactor`, `chore`)
