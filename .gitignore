@@ -43,6 +43,10 @@
 /volumes/gateway5/certificates/*
 !/volumes/gateway5/certificates/.gitkeep
 
+/volumes/ldap/*
+!/volumes/ldap/.gitkeep
+!/volumes/ldap/openldap.ldif
+
 # mongo data
 /dependencies/mongodb-data/*
 !/dependencies/mongodb-data/.gitkeep
@@ -96,3 +100,6 @@ docker-compose.override.yaml
 
 # node modules
 node_modules/
+
+# external reference projects
+docker-compose-dev-lab/
