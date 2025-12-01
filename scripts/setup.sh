@@ -186,8 +186,15 @@ fi
 
 log_section "starting services"
 
+# build profile list based on enabled services
+PROFILES="--profile full"
+if [ "$LDAP_ENABLED" = "true" ]; then
+    PROFILES="$PROFILES --profile ldap"
+    log_info "LDAP enabled"
+fi
+
 log_info "Starting all services..."
-docker compose --profile full up -d
+docker compose $PROFILES up -d
 
 log_section "waiting for platform"
 
@@ -225,6 +232,20 @@ else
     log_warn "configure-gateway-manager.sh not found"
 fi
 
+# configure LDAP adapter if enabled
+if [ "$LDAP_ENABLED" = "true" ]; then
+    log_section "ldap configuration"
+
+    if [ -f "$SCRIPT_DIR/configure-ldap.sh" ]; then
+        "$SCRIPT_DIR/configure-ldap.sh" || {
+            log_warn "LDAP configuration skipped"
+            log_info "Run manually later: ./scripts/configure-ldap.sh"
+        }
+    else
+        log_warn "configure-ldap.sh not found"
+    fi
+fi
+
 log_section "setup complete"
 
 echo ""
@@ -242,6 +263,12 @@ echo ""
 echo "  Gateway5:  localhost:${GATEWAY5_PORT:-50051} (gRPC)"
 echo "             Use iagctl client to interact"
 echo ""
+if [ "$LDAP_ENABLED" = "true" ]; then
+    echo "  OpenLDAP:  localhost:${LDAP_PORT:-3389}"
+    echo "             Admin DN: cn=admin,dc=itential,dc=io"
+    echo "             Password: admin"
+    echo ""
+fi
 echo "Common commands:"
 echo "  make up      - Start services"
 echo "  make down    - Stop services"

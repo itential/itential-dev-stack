@@ -5,12 +5,14 @@
 #   platform - MongoDB + Redis + Platform (most common)
 #   gateway4 - Automation Gateway 4
 #   gateway5 - Automation Gateway 5
-#   full     - All services
+#   ldap     - OpenLDAP (for enterprise auth testing)
+#   full     - All services (excludes ldap)
 #
 # Usage:
 #   make setup                               # First-time setup (recommended)
 #   make up                                  # Start all services
 #   docker compose --profile platform up -d  # Platform only
+#   docker compose --profile platform --profile ldap up -d  # Platform + LDAP
 
 networks:
   default:
@@ -57,6 +59,25 @@ services:
       start_period: 10s
     sysctls:
       net.core.somaxconn: 511
+    restart: unless-stopped
+
+  # OpenLDAP - for testing enterprise LDAP authentication
+  # Admin: cn=admin,dc=itential,dc=io / admin
+  openldap:
+    container_name: openldap
+    image: osixia/openldap:1.4.0
+    profiles: ["ldap"]
+    command: --copy-service
+    ports:
+      - "127.0.0.1:${LDAP_PORT:-3389}:389"
+    volumes:
+      - type: bind
+        source: ./volumes/ldap/openldap.ldif
+        target: /container/service/slapd/assets/config/bootstrap/ldif/custom/01-custom-ldap.ldif
+    environment:
+      LDAP_ORGANISATION: "Itential, LLC."
+      LDAP_DOMAIN: itential.io
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD:-admin}
     restart: unless-stopped
 
   # ==========================================================================
