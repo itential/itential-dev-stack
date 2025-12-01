@@ -110,7 +110,18 @@ git push origin feature/your-feature-name
 2. Click **Compare & pull request**
 3. Target the `main` branch of the upstream repository
 4. Fill out the PR template
-5. Submit the pull request
+5. Add a label matching your change type (see table below)
+6. Submit the pull request
+
+**PR labels:**
+
+| Commit Type | Label |
+|-------------|-------|
+| `feat`      | `enhancement` |
+| `fix`       | `bug` |
+| `docs`      | `documentation` |
+| `refactor`  | `refactor` |
+| `chore`     | `chore` |
 
 ### 9. Address Review Feedback
 
@@ -164,6 +175,7 @@ Before submitting:
 - [ ] Commits follow conventional format (`type: subject`)
 - [ ] No secrets or credentials committed
 - [ ] Documentation has been updated accordingly
+- [ ] PR has been labeled appropriately
 
 ## Getting Help
 
