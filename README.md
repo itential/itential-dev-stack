@@ -74,7 +74,7 @@ aws ecr get-login-password --region us-east-2 | \
 
 ### Known Considerations
 
-- **Rootless mode**: Works but may require `--userns=keep-id` for volume permissions
+- **Rootless mode**: Works with proper volume permissions (containers run as your user ID)
 - **podman-compose**: Feature parity with Docker Compose v2 is good but verify version 1.0.6+
 - **Compose profiles**: Fully supported in podman-compose 1.0.6+
 - **Health checks**: Work identically to Docker
@@ -162,18 +162,17 @@ itential-dev-stack/
 ├── volumes/
 │   ├── platform/
 │   │   ├── adapters/       # Custom adapters
-│   │   ├── logs/           # Platform logs
 │   │   └── ssl/            # SSL certificates
+│   │   # Note: Platform logs use a named Docker volume (platform-logs)
 │   ├── gateway4/
 │   │   ├── data/           # SQLite databases
 │   │   ├── playbooks/      # Ansible playbooks
 │   │   ├── scripts/        # Python scripts
-│   │   ├── ssl/            # SSL certificates
-│   │   └── terraform/      # Terraform modules
+│   │   └── ssl/            # SSL certificates
 │   ├── gateway5/
 │   │   ├── certificates/   # Gateway Manager certs
-│   │   ├── data/           # Database files
 │   │   └── scripts/        # Custom scripts
+│   │   # Note: Gateway5 database uses a named Docker volume (gateway5-data)
 │   └── ldap/
 │       └── openldap.ldif   # LDAP users & groups
 └── dependencies/
