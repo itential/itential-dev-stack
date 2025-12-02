@@ -192,7 +192,7 @@ upload_certificate() {
             -d "{\"raw_certificate\":${cert_content},\"contract_id\":\"${cert_name}\",\"alias\":\"${cert_name}\"}" 2>/dev/null)
 
         http_code=$(echo "$response" | tail -1)
-        response=$(echo "$response" | head -n -1)
+        response=$(echo "$response" | sed '$d')
 
         # success!
         if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
@@ -343,7 +343,7 @@ create_gateway() {
         -d "{\"gateway\":{\"cluster_id\":\"${CLUSTER_ID}\",\"description\":\"Auto-configured gateway\",\"enabled\":true,\"readonly\":false,\"certificates\":[\"${CERT_ID}\"],\"groups\":[\"admin_group\"]}}" 2>/dev/null)
 
     http_code=$(echo "$response" | tail -1)
-    response=$(echo "$response" | head -n -1)
+    response=$(echo "$response" | sed '$d')
 
     if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
         log_info "Gateway cluster created with certificate and enabled"

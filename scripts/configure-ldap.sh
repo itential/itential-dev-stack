@@ -92,7 +92,7 @@ fi
 log_info "Checking for LDAP adapter..."
 ADAPTER_CHECK=$(curl -s -w "\n%{http_code}" "${PLATFORM_URL}/adapters/LDAP" -b "$COOKIE_JAR" 2>/dev/null)
 ADAPTER_CODE=$(echo "$ADAPTER_CHECK" | tail -1)
-ADAPTER_RESPONSE=$(echo "$ADAPTER_CHECK" | head -n -1)
+ADAPTER_RESPONSE=$(echo "$ADAPTER_CHECK" | sed '$d')
 
 if [ "$ADAPTER_CODE" = "200" ]; then
     ADAPTER_EXISTS=true
@@ -131,7 +131,7 @@ if [ "$ADAPTER_EXISTS" = "false" ]; then
         }' 2>/dev/null)
 
     CREATE_CODE=$(echo "$CREATE_RESPONSE" | tail -1)
-    CREATE_BODY=$(echo "$CREATE_RESPONSE" | head -n -1)
+    CREATE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
 
     if [ "$CREATE_CODE" != "200" ]; then
         log_error "Failed to create LDAP adapter (HTTP $CREATE_CODE)"
@@ -200,7 +200,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "${PLATFORM_URL}/adapters/LDAP/pro
     -d "$LDAP_PROPERTIES" 2>/dev/null)
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
 
 if [ "$HTTP_CODE" != "200" ]; then
     log_error "Failed to configure LDAP adapter (HTTP $HTTP_CODE)"
