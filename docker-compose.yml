@@ -61,8 +61,8 @@ services:
       net.core.somaxconn: 511
     restart: unless-stopped
 
-  # OpenLDAP - for testing enterprise LDAP authentication
-  # Admin: cn=admin,dc=itential,dc=io / admin
+  # openldap - for testing enterprise ldap authentication
+  # admin: cn=admin,dc=itential,dc=io / admin
   openldap:
     container_name: openldap
     image: osixia/openldap:1.4.0
@@ -84,6 +84,15 @@ services:
   # ITENTIAL PLATFORM
   # ==========================================================================
 
+  # init platform-logs volume with correct ownership
+  platform-init:
+    image: alpine:latest
+    profiles: ["platform", "full"]
+    volumes:
+      - platform-logs:/mnt
+    command: sh -c "chown -R 1001:1001 /mnt && chmod -R 755 /mnt"
+    restart: "no"
+
   platform:
     container_name: platform
     image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-platform-config-lcm:${PLATFORM_VERSION:-6}
@@ -94,6 +103,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      platform-init:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${PLATFORM_PORT:-3000}:3000"
       - "127.0.0.1:8080:8080"
@@ -101,12 +112,9 @@ services:
       - type: bind
         source: ./volumes/platform/adapters
         target: /opt/itential/platform/services/custom
-      - type: bind
-        source: ./volumes/platform/logs
-        target: /var/log/itential
-      - type: bind
-        source: ./volumes/platform/logs
-        target: /opt/itential/logs
+        read_only: true
+      - platform-logs:/var/log/itential
+      - platform-logs:/opt/itential/logs
       - type: bind
         source: ./volumes/platform/ssl
         target: /etc/ssl/platform
@@ -152,6 +160,7 @@ services:
     image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway:${GATEWAY4_VERSION:-4.3.7}
     platform: linux/amd64
     profiles: ["gateway4", "full"]
+    user: "${UID:-1000}:${GID:-1000}"
     command:
       - "automation-gateway"
       - "--sync-config"
@@ -167,9 +176,6 @@ services:
       - type: bind
         source: ./volumes/gateway4/playbooks
         target: /usr/share/automation-gateway/ansible-playbooks
-      - type: bind
-        source: ./volumes/gateway4/terraform
-        target: /usr/share/automation-gateway
       - type: bind
         source: ./volumes/gateway4/ssl
         target: /etc/ssl/gateway
@@ -255,11 +261,9 @@ services:
     volumes:
       - type: bind
         source: ./volumes/gateway5/certificates
-        target: /etc/gateway/certificates
+        target: /etc/ssl/gateway5
         read_only: true
-      - type: bind
-        source: ./volumes/gateway5/data
-        target: /etc/gateway
+      - gateway5-data:/etc/gateway
     environment:
 
       # application
@@ -269,8 +273,8 @@ services:
 
       # gw manager connection
       GATEWAY_CONNECT_HOSTS: "platform:8080"
-      GATEWAY_CONNECT_CERTIFICATE_FILE: "/etc/gateway/certificates/gw-manager.pem"
-      GATEWAY_CONNECT_PRIVATE_KEY_FILE: "/etc/gateway/certificates/gw-manager-key.pem"
+      GATEWAY_CONNECT_CERTIFICATE_FILE: "/etc/ssl/gateway5/gw-manager.pem"
+      GATEWAY_CONNECT_PRIVATE_KEY_FILE: "/etc/ssl/gateway5/gw-manager-key.pem"
       GATEWAY_CONNECT_INSECURE_TLS: "true"
 
       # logging
@@ -280,3 +284,13 @@ services:
       GATEWAY_SERVER_USE_TLS: "false"
       GATEWAY_SERVER_LISTEN_ADDRESS: "gateway5"
     restart: unless-stopped
+
+# ==========================================================================
+# VOLUMES
+# ==========================================================================
+
+volumes:
+  gateway5-data:
+    driver: local
+  platform-logs:
+    driver: local
