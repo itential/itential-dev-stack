@@ -155,32 +155,47 @@ services:
   # AUTOMATION GATEWAY 4
   # ==========================================================================
 
+  # init gateway4 volumes with correct ownership
+  gateway4-init:
+    image: alpine:latest
+    profiles: ["gateway4", "full"]
+    volumes:
+      - gateway4-data:/mnt/data
+      - gateway4-app:/mnt/app
+    command: sh -c "chown -R 1000:1000 /mnt/data /mnt/app && chmod -R 755 /mnt/data /mnt/app"
+    restart: "no"
+
   gateway4:
     container_name: gateway4
     image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway:${GATEWAY4_VERSION:-4.3.7}
     platform: linux/amd64
     profiles: ["gateway4", "full"]
     user: "${UID:-1000}:${GID:-1000}"
+    depends_on:
+      gateway4-init:
+        condition: service_completed_successfully
     command:
       - "automation-gateway"
       - "--sync-config"
     ports:
       - "127.0.0.1:${GATEWAY4_PORT:-8083}:8083"
     volumes:
-      - type: bind
-        source: ./volumes/gateway4/data
-        target: /var/lib/automation-gateway
+      - gateway4-data:/var/lib/automation-gateway
+      - gateway4-app:/opt/automation-gateway
       - type: bind
         source: ./volumes/gateway4/scripts
         target: /usr/share/automation-gateway/scripts
+        read_only: true
       - type: bind
         source: ./volumes/gateway4/playbooks
         target: /usr/share/automation-gateway/ansible-playbooks
+        read_only: true
       - type: bind
         source: ./volumes/gateway4/ssl
         target: /etc/ssl/gateway
         read_only: true
     environment:
+      HOME: /var/lib/automation-gateway
 
       # ansible settings
       ANSIBLE_TIMEOUT: 900
@@ -290,6 +305,10 @@ services:
 # ==========================================================================
 
 volumes:
+  gateway4-app:
+    driver: local
+  gateway4-data:
+    driver: local
   gateway5-data:
     driver: local
   platform-logs:
