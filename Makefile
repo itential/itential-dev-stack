@@ -9,6 +9,10 @@
 -include .env
 export
 
+# auto-detect user/group IDs for volume ownership
+UID ?= $(shell id -u)
+GID ?= $(shell id -g)
+
 # default values
 ECR_REGISTRY ?= 497639811223.dkr.ecr.us-east-2.amazonaws.com
 PLATFORM_PORT ?= 3000
@@ -69,9 +73,10 @@ clean: ## Stop services and remove data (destructive)
 	@echo "Press Ctrl+C within 3 seconds to cancel..."
 	@sleep 3
 	@docker compose --profile full --profile ldap down -v
+	@docker volume rm itential-dev-stack_gateway5-data 2>/dev/null || true
+	@docker volume rm itential-dev-stack_platform-logs 2>/dev/null || true
 	@docker run --rm -u root -v $(PWD)/dependencies/mongodb-data:/data alpine sh -c 'rm -rf /data/* /data/.*' 2>/dev/null || true
 	@rm -rf volumes/gateway4/data/*.db 2>/dev/null || true
-	@rm -rf volumes/gateway5/data/* 2>/dev/null || true
 	@echo "Cleanup complete"
 
 generate-key: ## Generate a new 64-character encryption key
