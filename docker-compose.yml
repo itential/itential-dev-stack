@@ -162,7 +162,10 @@ services:
     volumes:
       - gateway4-data:/mnt/data
       - gateway4-app:/mnt/app
-    command: sh -c "chown -R 1000:1000 /mnt/data /mnt/app && chmod -R 755 /mnt/data /mnt/app"
+    environment:
+      - UID=${UID:-1000}
+      - GID=${GID:-1000}
+    command: sh -c "chown -R ${UID:-1000}:${GID:-1000} /mnt/data /mnt/app && chmod -R 755 /mnt/data /mnt/app"
     restart: "no"
 
   gateway4:
