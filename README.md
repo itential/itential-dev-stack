@@ -120,6 +120,7 @@ PLATFORM_INIT_DELAY=15
 | Gateway4 | http://localhost:8083 | admin@itential / admin |
 | Gateway5 | localhost:50051 (gRPC) | Use `iagctl` client |
 | OpenLDAP | localhost:3389 | cn=admin,dc=itential,dc=io / admin |
+| MCP | http://localhost:8000 (SSE) | N/A |
 | MongoDB | localhost:27017 | N/A |
 | Redis | localhost:6379 | N/A |
 
@@ -145,6 +146,9 @@ docker compose --profile gateway5 up -d
 
 # Platform with LDAP (for enterprise auth testing)
 docker compose --profile platform --profile ldap up -d
+
+# Platform with MCP (for LLM integration)
+docker compose --profile platform --profile mcp up -d
 ```
 
 ## 🪾 File Structure
@@ -159,6 +163,8 @@ itential-dev-stack/
 │   ├── setup.sh            # First-time setup
 │   ├── generate-certificates.sh
 │   └── configure-gateway-manager.sh
+├── docs/                   # Usage documentation
+│   └── README.md           # Client configuration examples
 ├── volumes/
 │   ├── platform/
 │   │   ├── adapters/       # Custom adapters
@@ -173,8 +179,10 @@ itential-dev-stack/
 │   │   ├── certificates/   # Gateway Manager certs
 │   │   └── scripts/        # Custom scripts
 │   │   # Note: Gateway5 database uses a named Docker volume (gateway5-data)
-│   └── ldap/
-│       └── openldap.ldif   # LDAP users & groups
+│   ├── ldap/
+│   │   └── openldap.ldif   # LDAP users & groups
+│   └── mcp/
+│       └── logs/           # MCP server logs
 └── dependencies/
     └── mongodb-data/       # MongoDB persistent data
 ```
@@ -262,6 +270,35 @@ docker compose --profile platform --profile ldap up -d
 | Base DN | dc=itential,dc=io |
 
 For advanced LDAP configuration, see the [official documentation](https://docs.itential.com/docs/configuring-open-ldap-iap).
+
+## 🤖 MCP Server (LLM Integration)
+
+The MCP (Model Context Protocol) server enables LLM tools like Claude Code and Claude Desktop to interact with Itential Platform.
+
+### Enabling MCP
+
+Add to your `.env` file:
+```bash
+MCP_ENABLED=true
+```
+
+Then run `make setup` or `make up`.
+
+### Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_ENABLED` | Enable MCP server | `false` |
+| `MCP_TRANSPORT` | Transport mode: `stdio` or `sse` | `stdio` |
+| `MCP_SSE_PORT` | Port for SSE transport | `8000` |
+| `MCP_PLATFORM_USER` | Platform username | `admin` |
+| `MCP_PLATFORM_PASSWORD` | Platform password | `admin` |
+
+### Usage with Claude Desktop
+
+See [docs/README.md](docs/README.md) for Claude Desktop configuration examples.
+
+For more information, see [itential-mcp](https://github.com/itential/itential-mcp).
 
 ## 🔐 Gateway5 / Gateway Manager
 
