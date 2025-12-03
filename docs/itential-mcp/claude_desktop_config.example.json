@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "itential": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network", "itential",
+        "-e", "ITENTIAL_MCP_PLATFORM_HOST=platform",
+        "-e", "ITENTIAL_MCP_PLATFORM_PORT=3000",
+        "-e", "ITENTIAL_MCP_PLATFORM_USER=<username>",
+        "-e", "ITENTIAL_MCP_PLATFORM_PASSWORD=<password>",
+        "-e", "ITENTIAL_MCP_PLATFORM_DISABLE_TLS=true",
+        "-e", "ITENTIAL_MCP_SERVER_LOG_LEVEL=INFO",
+        "ghcr.io/itential/itential-mcp:latest"
+      ]
+    }
+  }
+}
