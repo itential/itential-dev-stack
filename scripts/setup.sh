@@ -172,6 +172,10 @@ if [ "$LDAP_ENABLED" = "true" ]; then
     PROFILES="$PROFILES --profile ldap"
     log_info "LDAP enabled"
 fi
+if [ "$MCP_ENABLED" = "true" ]; then
+    PROFILES="$PROFILES --profile mcp"
+    log_info "MCP enabled"
+fi
 
 log_info "Starting all services..."
 docker compose $PROFILES up -d
@@ -247,6 +251,11 @@ if [ "$LDAP_ENABLED" = "true" ]; then
     echo "  OpenLDAP:  localhost:${LDAP_PORT:-3389}"
     echo "             Admin DN: cn=admin,dc=itential,dc=io"
     echo "             Password: admin"
+    echo ""
+fi
+if [ "$MCP_ENABLED" = "true" ]; then
+    echo "  MCP:       http://localhost:${MCP_SSE_PORT:-8000} (SSE transport)"
+    echo "             See: https://github.com/itential/itential-mcp"
     echo ""
 fi
 echo "Common commands:"

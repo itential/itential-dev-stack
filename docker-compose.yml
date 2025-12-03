@@ -1,4 +1,4 @@
-# Itential Dev Stack - Unified Configuration
+# Itential Dev Stack
 #
 # Profiles:
 #   deps     - MongoDB + Redis only
@@ -6,13 +6,15 @@
 #   gateway4 - Automation Gateway 4
 #   gateway5 - Automation Gateway 5
 #   ldap     - OpenLDAP (for enterprise auth testing)
-#   full     - All services (excludes ldap)
+#   mcp      - MCP Server (for LLM integration)
+#   full     - All services (excludes ldap, mcp)
 #
 # Usage:
-#   make setup                               # First-time setup (recommended)
-#   make up                                  # Start all services
-#   docker compose --profile platform up -d  # Platform only
+#   make setup                                              # First-time setup
+#   make up                                                 # Start all services
+#   docker compose --profile platform up -d                 # Platform only
 #   docker compose --profile platform --profile ldap up -d  # Platform + LDAP
+#   docker compose --profile platform --profile mcp up -d   # Platform + MCP
 
 networks:
   default:
@@ -144,7 +146,7 @@ services:
       ITENTIAL_LOG_LEVEL: ${LOG_LEVEL:-debug}
       ITENTIAL_LOG_DIRECTORY: "/var/log/itential"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/login"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -301,6 +303,40 @@ services:
       # server
       GATEWAY_SERVER_USE_TLS: "false"
       GATEWAY_SERVER_LISTEN_ADDRESS: "gateway5"
+    restart: unless-stopped
+
+  # ==========================================================================
+  # MCP SERVER
+  # ==========================================================================
+
+  mcp:
+    container_name: mcp
+    image: ghcr.io/itential/itential-mcp:${MCP_VERSION:-latest}
+    profiles: ["mcp"]
+    depends_on:
+      platform:
+        condition: service_healthy
+    stdin_open: true
+    tty: false
+    ports:
+      - "127.0.0.1:${MCP_SSE_PORT:-8000}:8000"
+    volumes:
+      - type: bind
+        source: ./volumes/mcp/logs
+        target: /app/logs
+    environment:
+      # platform connection
+      ITENTIAL_MCP_PLATFORM_HOST: platform
+      ITENTIAL_MCP_PLATFORM_PORT: 3000
+      ITENTIAL_MCP_PLATFORM_USER: ${MCP_PLATFORM_USER:-admin}
+      ITENTIAL_MCP_PLATFORM_PASSWORD: ${MCP_PLATFORM_PASSWORD:-admin}
+      ITENTIAL_MCP_PLATFORM_DISABLE_TLS: "true"
+
+      # server settings
+      ITENTIAL_MCP_SERVER_TRANSPORT: ${MCP_TRANSPORT:-stdio}
+      ITENTIAL_MCP_SERVER_HOST: "0.0.0.0"
+      ITENTIAL_MCP_SERVER_PORT: 8000
+      ITENTIAL_MCP_SERVER_LOG_LEVEL: ${LOG_LEVEL:-INFO}
     restart: unless-stopped
 
 # ==========================================================================
