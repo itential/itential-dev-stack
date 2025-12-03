@@ -296,7 +296,7 @@ Then run `make setup` or `make up`.
 
 ### Usage with Claude Desktop
 
-See [docs/README.md](docs/README.md) for Claude Desktop configuration examples.
+See [docs/itential-mcp](docs/itential-mcp/) for Claude Desktop configuration examples.
 
 For more information, see [itential-mcp](https://github.com/itential/itential-mcp).
 
