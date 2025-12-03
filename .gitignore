@@ -47,6 +47,9 @@
 !/volumes/ldap/.gitkeep
 !/volumes/ldap/openldap.ldif
 
+/volumes/mcp/logs/*
+!/volumes/mcp/logs/.gitkeep
+
 # mongo data
 /dependencies/mongodb-data/*
 !/dependencies/mongodb-data/.gitkeep
@@ -70,6 +73,10 @@ Thumbs.db
 .claude/
 CLAUDE.md
 AGENTS.md
+
+# claude desktop config (contains credentials)
+docs/claude_desktop_config.json
+!docs/claude_desktop_config.example.json
 
 # temp files
 *.tmp
