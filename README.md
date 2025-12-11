@@ -121,6 +121,7 @@ PLATFORM_INIT_DELAY=15
 | Gateway5 | localhost:50051 (gRPC) | Use `iagctl` client |
 | OpenLDAP | localhost:3389 | cn=admin,dc=itential,dc=io / admin |
 | MCP | http://localhost:8000 (SSE) | N/A |
+| OpenBao | http://localhost:8200 | Token from `volumes/openbao/init-keys.json` |
 | MongoDB | localhost:27017 | N/A |
 | Redis | localhost:6379 | N/A |
 
@@ -149,6 +150,9 @@ docker compose --profile platform --profile ldap up -d
 
 # Platform with MCP (for LLM integration)
 docker compose --profile platform --profile mcp up -d
+
+# Full stack with OpenBao (for secrets management)
+docker compose --profile full --profile openbao up -d
 ```
 
 ## 🪾 File Structure
@@ -181,8 +185,9 @@ itential-dev-stack/
 │   │   # Note: Gateway5 database uses a named Docker volume (gateway5-data)
 │   ├── ldap/
 │   │   └── openldap.ldif   # LDAP users & groups
-│   └── mcp/
-│       └── logs/           # MCP server logs
+│   ├── mcp/
+│   │   └── logs/           # MCP server logs
+│   └── openbao/            # OpenBao configuration (optional)
 └── dependencies/
     └── mongodb-data/       # MongoDB persistent data
 ```
@@ -300,7 +305,87 @@ See [docs/itential-mcp](docs/itential-mcp/) for Claude Desktop configuration exa
 
 For more information, see [itential-mcp](https://github.com/itential/itential-mcp).
 
-## 🔐 Gateway5 / Gateway Manager
+## 🔐 OpenBao (Secrets Management)
+
+[OpenBao](https://openbao.org/) is a Vault-compatible secrets management solution available as an optional service for storing and retrieving sensitive data.
+
+### Enabling OpenBao
+
+Add to your `.env` file:
+```bash
+OPENBAO_ENABLED=true
+```
+
+Then run `make setup`. The setup script will:
+1. Start the OpenBao container
+2. Initialize and unseal OpenBao automatically
+3. Save the root token and unseal keys to `volumes/openbao/init-keys.json`
+4. Enable the KV v2 secrets engine
+5. Configure Platform environment variables for Vault integration
+6. Install and configure the HashiCorp Vault adapter in Platform
+
+### Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENBAO_ENABLED` | Enable OpenBao server | `false` |
+| `OPENBAO_VERSION` | OpenBao image version | `2` |
+| `OPENBAO_PORT` | API port | `8200` |
+
+### How It Works
+
+OpenBao runs with **persistent file storage**:
+- Data persists across container restarts in the `openbao-data` Docker volume
+- Requires initialization on first run (handled automatically by `make setup`)
+- Requires unsealing after restart (handled automatically by `configure-openbao.sh`)
+- Root token is generated during initialization and saved locally
+
+Platform is automatically configured with these environment variables:
+- `ITENTIAL_VAULT_URL=http://openbao:8200`
+- `ITENTIAL_VAULT_AUTH_METHOD=token`
+- `ITENTIAL_VAULT_TOKEN=<generated-root-token>`
+- `ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data`
+
+### Quick Start
+
+After `make setup`, get your root token:
+```bash
+# View root token
+cat volumes/openbao/init-keys.json | jq -r '.root_token'
+
+# Or use the token from .env
+grep ITENTIAL_VAULT_TOKEN .env
+```
+
+Write and read secrets:
+```bash
+# Set your token (replace with actual token)
+export VAULT_TOKEN=$(cat volumes/openbao/init-keys.json | jq -r '.root_token')
+
+# Write a secret using curl
+curl -X POST http://localhost:8200/v1/secret/data/myapp/config \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d '{"data": {"username": "admin", "password": "secret"}}'
+
+# Read a secret
+curl http://localhost:8200/v1/secret/data/myapp/config \
+  -H "X-Vault-Token: $VAULT_TOKEN"
+```
+
+### Using the OpenBao UI
+
+Access the web UI at http://localhost:8200 and log in with your root token.
+
+### After Restart
+
+If OpenBao is sealed after a container restart, run:
+```bash
+./scripts/configure-openbao.sh
+```
+
+For detailed usage examples, see [docs/openbao](docs/openbao/).
+
+## 🔑 Gateway5 / Gateway Manager
 
 Gateway5 connects to Platform via Gateway Manager. The setup is fully automated:
 
