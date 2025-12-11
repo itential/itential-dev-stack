@@ -164,6 +164,12 @@ if [ -d "$PROJECT_ROOT/volumes/gateway4/scripts" ]; then
     log_info "Gateway4 scripts: permissions set"
 fi
 
+# make openbao config readable by container (runs as uid 100)
+if [ -f "$PROJECT_ROOT/volumes/openbao/config/config.hcl" ]; then
+    chmod 644 "$PROJECT_ROOT/volumes/openbao/config/config.hcl" 2>/dev/null || true
+    log_info "OpenBao config: permissions set"
+fi
+
 log_section "starting services"
 
 # build profile list based on enabled services
@@ -175,6 +181,10 @@ fi
 if [ "$MCP_ENABLED" = "true" ]; then
     PROFILES="$PROFILES --profile mcp"
     log_info "MCP enabled"
+fi
+if [ "$OPENBAO_ENABLED" = "true" ]; then
+    PROFILES="$PROFILES --profile openbao"
+    log_info "OpenBao enabled"
 fi
 
 log_info "Starting all services..."
@@ -230,6 +240,32 @@ if [ "$LDAP_ENABLED" = "true" ]; then
     fi
 fi
 
+# configure OpenBao if enabled
+if [ "$OPENBAO_ENABLED" = "true" ]; then
+    log_section "openbao configuration"
+
+    if [ -f "$SCRIPT_DIR/configure-openbao.sh" ]; then
+        "$SCRIPT_DIR/configure-openbao.sh" || {
+            log_warn "OpenBao configuration skipped"
+            log_info "Run manually later: ./scripts/configure-openbao.sh"
+        }
+    else
+        log_warn "configure-openbao.sh not found"
+    fi
+fi
+
+# sync admin roles after all adapters are configured
+log_section "admin role sync"
+
+if [ -f "$SCRIPT_DIR/sync-admin-roles.sh" ]; then
+    "$SCRIPT_DIR/sync-admin-roles.sh" || {
+        log_warn "Admin role sync skipped"
+        log_info "Run manually later: ./scripts/sync-admin-roles.sh"
+    }
+else
+    log_warn "sync-admin-roles.sh not found"
+fi
+
 log_section "setup complete"
 
 echo ""
@@ -256,6 +292,16 @@ fi
 if [ "$MCP_ENABLED" = "true" ]; then
     echo "  MCP:       http://localhost:${MCP_SSE_PORT:-8000} (SSE transport)"
     echo "             See: https://github.com/itential/itential-mcp"
+    echo ""
+fi
+if [ "$OPENBAO_ENABLED" = "true" ]; then
+    OPENBAO_TOKEN=""
+    if [ -f "$PROJECT_ROOT/volumes/openbao/init-keys.json" ]; then
+        OPENBAO_TOKEN=$(jq -r '.root_token' "$PROJECT_ROOT/volumes/openbao/init-keys.json" 2>/dev/null)
+    fi
+    echo "  OpenBao:   http://localhost:${OPENBAO_PORT:-8200}"
+    echo "             Token: ${OPENBAO_TOKEN:-see volumes/openbao/init-keys.json}"
+    echo "             Platform is configured to use OpenBao for secrets"
     echo ""
 fi
 echo "Common commands:"
