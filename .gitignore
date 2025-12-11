@@ -50,6 +50,9 @@
 /volumes/mcp/logs/*
 !/volumes/mcp/logs/.gitkeep
 
+# openbao - track config, ignore init keys
+/volumes/openbao/init-keys.json
+
 # mongo data
 /dependencies/mongodb-data/*
 !/dependencies/mongodb-data/.gitkeep
