@@ -7,7 +7,8 @@
 #   gateway5 - Automation Gateway 5
 #   ldap     - OpenLDAP (for enterprise auth testing)
 #   mcp      - MCP Server (for LLM integration)
-#   full     - All services (excludes ldap, mcp)
+#   openbao  - OpenBao (Vault-compatible secrets management)
+#   full     - All services (excludes ldap, mcp, openbao)
 #
 # Usage:
 #   make setup                                              # First-time setup
@@ -15,6 +16,7 @@
 #   docker compose --profile platform up -d                 # Platform only
 #   docker compose --profile platform --profile ldap up -d  # Platform + LDAP
 #   docker compose --profile platform --profile mcp up -d   # Platform + MCP
+#   docker compose --profile full --profile openbao up -d   # Full + OpenBao
 
 networks:
   default:
@@ -100,6 +102,11 @@ services:
     image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-platform-config-lcm:${PLATFORM_VERSION:-6}
     platform: linux/amd64
     profiles: ["platform", "full"]
+
+    # load vault env vars from .env (only when set by configure-openbao.sh)
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       mongodb:
         condition: service_healthy
@@ -145,6 +152,7 @@ services:
       # logging
       ITENTIAL_LOG_LEVEL: ${LOG_LEVEL:-debug}
       ITENTIAL_LOG_DIRECTORY: "/var/log/itential"
+
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/login"]
       interval: 30s
@@ -339,6 +347,48 @@ services:
       ITENTIAL_MCP_SERVER_LOG_LEVEL: ${LOG_LEVEL:-INFO}
     restart: unless-stopped
 
+  # ==========================================================================
+  # OPENBAO (Vault-compatible secrets management)
+  # ==========================================================================
+
+  # init openbao-data volume with correct ownership
+  openbao-init:
+    image: alpine:latest
+    profiles: ["openbao"]
+    volumes:
+      - openbao-data:/mnt/data
+    command: sh -c "chown -R 100:1000 /mnt/data && chmod -R 755 /mnt/data"
+    restart: "no"
+
+  openbao:
+    container_name: openbao
+    image: ghcr.io/openbao/openbao:${OPENBAO_VERSION:-2}
+    profiles: ["openbao"]
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "127.0.0.1:${OPENBAO_PORT:-8200}:8200"
+    volumes:
+      - openbao-data:/openbao/data
+      - type: bind
+        source: ./volumes/openbao/config
+        target: /openbao/config
+        read_only: true
+    environment:
+      VAULT_DISABLE_MLOCK: "true"
+      VAULT_API_ADDR: "http://0.0.0.0:8200"
+    command: server -config=/openbao/config/config.hcl
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8200/v1/sys/health?standbyok=true&uninitcode=200&sealedcode=200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
 # ==========================================================================
 # VOLUMES
 # ==========================================================================
@@ -349,6 +399,8 @@ volumes:
   gateway4-data:
     driver: local
   gateway5-data:
+    driver: local
+  openbao-data:
     driver: local
   platform-logs:
     driver: local

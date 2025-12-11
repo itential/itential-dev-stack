@@ -19,6 +19,7 @@ PLATFORM_PORT ?= 3000
 GATEWAY4_PORT ?= 8083
 LDAP_PORT ?= 3389
 MCP_SSE_PORT ?= 8000
+OPENBAO_PORT ?= 8200
 
 # build profile list based on enabled services
 PROFILES := --profile full
@@ -27,6 +28,9 @@ ifeq ($(LDAP_ENABLED),true)
 endif
 ifeq ($(MCP_ENABLED),true)
   PROFILES += --profile mcp
+endif
+ifeq ($(OPENBAO_ENABLED),true)
+  PROFILES += --profile openbao
 endif
 
 help: ## Show available commands
@@ -54,7 +58,7 @@ logs: ## Follow logs (all services, or: make logs LOG=platform)
 
 status: ## Show service status and URLs
 	@echo ""
-	@docker compose --profile full --profile ldap --profile mcp ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+	@docker compose --profile full --profile ldap --profile mcp --profile openbao ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 	@echo "URLs:"
 	@echo "  Platform:  http://localhost:$(PLATFORM_PORT)  (admin/admin)"
@@ -64,6 +68,10 @@ status: ## Show service status and URLs
 	fi
 	@if docker ps --format '{{.Names}}' | grep -q '^mcp$$'; then \
 		echo "  MCP:       http://localhost:$(MCP_SSE_PORT)  (SSE transport)"; \
+	fi
+	@if docker ps --format '{{.Names}}' | grep -q '^openbao$$'; then \
+		TOKEN=$$(cat volumes/openbao/init-keys.json 2>/dev/null | jq -r '.root_token // "see init-keys.json"'); \
+		echo "  OpenBao:   http://localhost:$(OPENBAO_PORT)  (token: $$TOKEN)"; \
 	fi
 	@echo ""
 
@@ -79,10 +87,14 @@ clean: ## Stop services and remove data (destructive)
 	@echo "WARNING: This will delete all container data."
 	@echo "Press Ctrl+C within 3 seconds to cancel..."
 	@sleep 3
-	@docker compose --profile full --profile ldap --profile mcp down -v
+	@docker compose --profile full --profile ldap --profile mcp --profile openbao down -v
 	@docker rm -f $$(docker ps -aq --filter "ancestor=ghcr.io/itential/itential-mcp") 2>/dev/null || true
 	@docker volume rm itential-dev-stack_gateway5-data 2>/dev/null || true
+	@docker volume rm itential-dev-stack_openbao-data 2>/dev/null || true
 	@docker volume rm itential-dev-stack_platform-logs 2>/dev/null || true
+	@rm -f volumes/openbao/init-keys.json 2>/dev/null || true
+	@sed -i '/^# OpenBao Platform Integration/d' .env 2>/dev/null || true
+	@sed -i '/^ITENTIAL_VAULT_/d' .env 2>/dev/null || true
 	@docker run --rm -u root -v $(PWD)/dependencies/mongodb-data:/data alpine sh -c 'rm -rf /data/* /data/.*' 2>/dev/null || true
 	@rm -rf volumes/gateway4/data/*.db 2>/dev/null || true
 	@echo "Cleanup complete"
