@@ -161,11 +161,16 @@ if [ "$OPENBAO_ENABLED" = "true" ]; then
 
     # check if vault vars need to be added or updated
     if ! grep -q "^ITENTIAL_VAULT_URL=" "$PROJECT_ROOT/.env" 2>/dev/null; then
+
         # vault vars not present, add them
         log_info "Updating .env with OpenBao root token..."
+
+        # NOTE: platform connects to OpenBao via Docker internal network where it always listens on 8200
+        # the OPENBAO_PORT variable only affects the host port mapping for external access
         cat >> "$PROJECT_ROOT/.env" << EOF
 
 # OpenBao Platform Integration (auto-configured)
+# Platform connects via Docker internal network (always port 8200 internally)
 ITENTIAL_VAULT_URL=http://openbao:8200
 ITENTIAL_VAULT_AUTH_METHOD=token
 ITENTIAL_VAULT_TOKEN=${ROOT_TOKEN}
