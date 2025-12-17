@@ -131,7 +131,7 @@ When `OPENBAO_ENABLED=true`, the setup script automatically:
    ITENTIAL_VAULT_AUTH_METHOD=token
    ITENTIAL_VAULT_TOKEN=<generated-root-token>
    ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data
-   ITENTIAL_VAULT_READ_ONLY=true
+   ITENTIAL_VAULT_READ_ONLY=false
    ```
 
 2. **Installs HashiCorp Vault adapter** - Clones from GitLab and runs npm install:
@@ -157,6 +157,80 @@ Platform can reference secrets stored in OpenBao via:
 2. **Environment Variables** - Platform reads `ITENTIAL_VAULT_*` settings for native integration
 
 Consult [Itential's Vault documentation](https://docs.itential.com/docs/configure-hashicorp-vault-itential-platform) for detailed usage.
+
+## Property Encryption
+
+When OpenBao is enabled with `ITENTIAL_VAULT_READ_ONLY=false`, Platform supports two methods for encrypting sensitive adapter properties.
+
+### Automatic Property Encryption
+
+Adapters with `propertiesDecorators.json` files automatically encrypt marked properties (like passwords and API tokens) and store them in OpenBao.
+
+**How it works:**
+1. Adapter defines sensitive properties in `propertiesDecorators.json`
+2. When you save adapter config via UI or API with plaintext values
+3. Platform automatically encrypts and stores in OpenBao (not MongoDB)
+4. Values are retrieved from OpenBao at runtime
+
+**Requirements:**
+- `OPENBAO_ENABLED=true`
+- `ITENTIAL_VAULT_READ_ONLY=false` (default when auto-configured)
+- Adapter must have `propertiesDecorators.json` with encryption decorators
+
+**Example propertiesDecorators.json:**
+```json
+[
+  {"type": "encryption", "pointer": "/password"},
+  {"type": "encryption", "pointer": "/apiToken"}
+]
+```
+
+**Check existing adapter decorators:**
+```bash
+docker exec platform cat /opt/itential/platform/server/services/adapter-ldap/propertiesDecorators.json
+```
+
+See [Automatic Property Encryption](https://docs.itential.com/docs/automatic-property-encryption-itential-platform) for details.
+
+### Manual Property Encryption ($SECRET syntax)
+
+Reference pre-existing secrets in OpenBao using the `$SECRET` syntax in adapter properties.
+
+**Syntax:**
+```
+$SECRET_<path> $KEY_<key>
+```
+
+**Example:**
+```bash
+# Create a secret in OpenBao
+export VAULT_TOKEN=$(cat volumes/openbao/init-keys.json | jq -r '.root_token')
+curl -X POST http://localhost:8200/v1/secret/data/adapters/myapi \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d '{"data": {"password": "supersecret", "apikey": "abc123"}}'
+
+# Reference in adapter property (via UI or API)
+# password field: "$SECRET_adapters/myapi $KEY_password"
+# apikey field: "$SECRET_adapters/myapi $KEY_apikey"
+```
+
+**Example secrets for testing:**
+
+Setup automatically creates example secrets at `secret/example/credentials`:
+```bash
+# View the example secrets
+curl -s http://localhost:8200/v1/secret/data/example/credentials \
+  -H "X-Vault-Token: $VAULT_TOKEN" | jq '.data.data'
+
+# Use in adapter: "$SECRET_example/credentials $KEY_password"
+```
+
+**Use cases:**
+- Pre-populate secrets before adapter configuration
+- Share secrets across multiple adapters
+- Integrate with external secret management workflows
+
+See [Manual Property Encryption](https://docs.itential.com/docs/manual-property-encryption-itential-platform) for details.
 
 ## Example: Storing Adapter Credentials
 
@@ -206,7 +280,7 @@ These are automatically set when `OPENBAO_ENABLED=true`:
 | `ITENTIAL_VAULT_AUTH_METHOD` | Authentication method | `token` |
 | `ITENTIAL_VAULT_TOKEN` | Authentication token | Generated root token |
 | `ITENTIAL_VAULT_SECRETS_ENDPOINT` | KV secrets path | `secret/data` |
-| `ITENTIAL_VAULT_READ_ONLY` | Read-only mode | `true` |
+| `ITENTIAL_VAULT_READ_ONLY` | Read-only mode (false enables property encryption) | `false` |
 
 ## Persistent Storage
 

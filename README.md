@@ -385,6 +385,44 @@ If OpenBao is sealed after a container restart, run:
 
 For detailed usage examples, see [docs/openbao](docs/openbao/).
 
+### Property Encryption
+
+When OpenBao is enabled, Platform supports two methods for encrypting sensitive adapter properties:
+
+#### Automatic Property Encryption
+
+Adapters with `propertiesDecorators.json` files automatically encrypt marked properties (like passwords and API tokens) and store them in OpenBao.
+
+**How it works:**
+1. Adapter defines sensitive properties in `propertiesDecorators.json`
+2. When you save adapter config via UI or API, values are encrypted and stored in OpenBao
+3. Values are retrieved from OpenBao at runtime (never stored in MongoDB plaintext)
+
+**Requirements:**
+- `OPENBAO_ENABLED=true`
+- `ITENTIAL_VAULT_READ_ONLY=false` (default when auto-configured)
+
+See [Automatic Property Encryption](https://docs.itential.com/docs/automatic-property-encryption-itential-platform) for details.
+
+#### Manual Property Encryption ($SECRET syntax)
+
+Reference pre-existing secrets in OpenBao using the `$SECRET` syntax in adapter properties:
+
+```bash
+# Create a secret in OpenBao
+export VAULT_TOKEN=$(cat volumes/openbao/init-keys.json | jq -r '.root_token')
+curl -X POST http://localhost:8200/v1/secret/data/adapters/myapi \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d '{"data": {"password": "supersecret", "apikey": "abc123"}}'
+
+# Reference in adapter property (via UI or API)
+# password field: "$SECRET_adapters/myapi $KEY_password"
+```
+
+An example secret is automatically created during setup at `secret/example/credentials` for testing.
+
+See [Manual Property Encryption](https://docs.itential.com/docs/manual-property-encryption-itential-platform) for details.
+
 ## 🔑 Gateway5 / Gateway Manager
 
 Gateway5 connects to Platform via Gateway Manager. The setup is fully automated:
