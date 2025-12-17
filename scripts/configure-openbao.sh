@@ -147,7 +147,8 @@ if [ -z "$KV_ENABLED" ]; then
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
         log_info "KV v2 secrets engine enabled at secret/"
     elif [ "$HTTP_CODE" = "400" ]; then
-        # may already exist
+
+        # may already exist?
         log_info "KV secrets engine may already be enabled"
     else
         log_warn "Could not enable KV v2 secrets engine (HTTP $HTTP_CODE)"
@@ -175,7 +176,7 @@ ITENTIAL_VAULT_URL=http://openbao:8200
 ITENTIAL_VAULT_AUTH_METHOD=token
 ITENTIAL_VAULT_TOKEN=${ROOT_TOKEN}
 ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data
-ITENTIAL_VAULT_READ_ONLY=true
+ITENTIAL_VAULT_READ_ONLY=false
 EOF
         log_info "Platform Vault integration configured with root token"
     elif [ "$ITENTIAL_VAULT_TOKEN" != "$ROOT_TOKEN" ]; then
@@ -424,6 +425,27 @@ fi
 # export ADAPTER_INSTALLED for setup.sh to detect if Platform restart is needed
 export ADAPTER_INSTALLED
 
+# ==========================================================================
+# CREATE EXAMPLE SECRETS FOR TESTING MANUAL PROPERTY ENCRYPTION
+# ==========================================================================
+
+log_info "Creating example secrets for manual property encryption testing..."
+
+# create example secret for demonstrating $SECRET syntax
+EXAMPLE_SECRET_PATH="secret/data/example/credentials"
+EXAMPLE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${OPENBAO_URL}/v1/${EXAMPLE_SECRET_PATH}" \
+    -H "X-Vault-Token: ${ROOT_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data": {"username": "demo_user", "password": "demo_password", "api_key": "demo_api_key_12345"}}' 2>/dev/null)
+
+EXAMPLE_CODE=$(echo "$EXAMPLE_RESPONSE" | tail -1)
+if [ "$EXAMPLE_CODE" = "200" ] || [ "$EXAMPLE_CODE" = "204" ]; then
+    log_info "Example secrets created at secret/example/credentials"
+    log_info "  Use in adapter properties: \"\$SECRET_example/credentials \$KEY_password\""
+else
+    log_warn "Could not create example secrets (HTTP $EXAMPLE_CODE)"
+fi
+
 echo ""
 echo "OpenBao Details:"
 echo "  URL:        $OPENBAO_URL"
@@ -434,4 +456,9 @@ echo "Usage:"
 echo "  export VAULT_ADDR=$OPENBAO_URL"
 echo "  export VAULT_TOKEN=$ROOT_TOKEN"
 echo "  bao kv put -mount=secret myapp/config key=value"
+echo ""
+echo "Example secrets available for testing:"
+echo "  Path: secret/example/credentials"
+echo "  Keys: username, password, api_key"
+echo "  Usage: \"\$SECRET_example/credentials \$KEY_password\""
 echo ""
