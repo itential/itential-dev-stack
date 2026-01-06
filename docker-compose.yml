@@ -20,7 +20,7 @@
 
 networks:
   default:
-    name: itential
+    name: devstack
 
 services:
   # ==========================================================================

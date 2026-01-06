@@ -6,7 +6,7 @@
         "run",
         "-i",
         "--rm",
-        "--network", "itential",
+        "--network", "devstack",
         "-e", "ITENTIAL_MCP_PLATFORM_HOST=platform",
         "-e", "ITENTIAL_MCP_PLATFORM_PORT=3000",
         "-e", "ITENTIAL_MCP_PLATFORM_USER=<username>",

@@ -31,7 +31,7 @@ Add the following configuration (see [claude_desktop_config.example.json](claude
         "run",
         "-i",
         "--rm",
-        "--network", "itential",
+        "--network", "devstack",
         "-e", "ITENTIAL_MCP_PLATFORM_HOST=platform",
         "-e", "ITENTIAL_MCP_PLATFORM_PORT=3000",
         "-e", "ITENTIAL_MCP_PLATFORM_USER=admin@itential",
@@ -51,7 +51,7 @@ Add the following configuration (see [claude_desktop_config.example.json](claude
 
 The configuration runs the MCP container on-demand when Claude Desktop starts. The container:
 
-1. Connects to the `itential` docker network _(created by docker-compose)_
+1. Connects to the `devstack` docker network _(created by docker-compose)_
 2. Authenticates with Platform using the provided credentials
 3. Exposes Itential Platform tools to Claude Desktop via stdio
 
