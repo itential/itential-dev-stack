@@ -36,7 +36,7 @@ services:
     image: mongo:${MONGO_VERSION:-8.0}
     profiles: ["deps", "platform", "full"]
     ports:
-      - "127.0.0.1:27017:27017"
+      - "${BIND_ADDRESS}27017:27017"
     volumes:
       - type: bind
         source: ./dependencies/mongodb-data
@@ -58,7 +58,7 @@ services:
     image: redis:${REDIS_VERSION:-7.4}
     profiles: ["deps", "platform", "full"]
     ports:
-      - "127.0.0.1:6379:6379"
+      - "${BIND_ADDRESS}6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -77,7 +77,7 @@ services:
     profiles: ["ldap"]
     command: --copy-service
     ports:
-      - "127.0.0.1:${LDAP_PORT:-3389}:389"
+      - "${BIND_ADDRESS}${LDAP_PORT:-3389}:389"
     volumes:
       - type: bind
         source: ./volumes/ldap/openldap.ldif
@@ -119,8 +119,8 @@ services:
       platform-init:
         condition: service_completed_successfully
     ports:
-      - "127.0.0.1:${PLATFORM_PORT:-3000}:3000"
-      - "127.0.0.1:8080:8080"
+      - "${BIND_ADDRESS}${PLATFORM_PORT:-3000}:3000"
+      - "${BIND_ADDRESS}8080:8080"
     volumes:
       - type: bind
         source: ./volumes/platform/adapters
@@ -199,7 +199,7 @@ services:
       - "automation-gateway"
       - "--sync-config"
     ports:
-      - "127.0.0.1:${GATEWAY4_PORT:-8083}:8083"
+      - "${BIND_ADDRESS}${GATEWAY4_PORT:-8083}:8083"
     volumes:
       - gateway4-data:/var/lib/automation-gateway
       - gateway4-app:/opt/automation-gateway
@@ -293,7 +293,7 @@ services:
       - iagctl
       - server
     ports:
-      - "${GATEWAY5_PORT:-50051}:50051"
+      - "${BIND_ADDRESS}${GATEWAY5_PORT:-50051}:50051"
     volumes:
       - type: bind
         source: ./volumes/gateway5/certificates
@@ -335,7 +335,7 @@ services:
     stdin_open: true
     tty: false
     ports:
-      - "127.0.0.1:${MCP_SSE_PORT:-8000}:8000"
+      - "${BIND_ADDRESS}${MCP_SSE_PORT:-8000}:8000"
     volumes:
       - type: bind
         source: ./volumes/mcp/logs
@@ -384,7 +384,7 @@ services:
     cap_add:
       - IPC_LOCK
     ports:
-      - "127.0.0.1:${OPENBAO_PORT:-8200}:8200"
+      - "${BIND_ADDRESS}${OPENBAO_PORT:-8200}:8200"
     volumes:
       - openbao-data:/openbao/data
       - type: bind
