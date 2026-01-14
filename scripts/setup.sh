@@ -18,17 +18,15 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_section() { echo -e "\n${BLUE}--- $1 ---${NC}"; }
 
+# load defaults (single source of truth for default values)
+source "$PROJECT_ROOT/defaults.env"
+
 # are images present locally?
 check_images_present() {
-    local ecr="${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}"
-    local platform_ver="${PLATFORM_VERSION:-6}"
-    local gw4_ver="${GATEWAY4_VERSION:-4.3.7}"
-    local gw5_ver="${GATEWAY5_VERSION:-5.1.0-amd64}"
-
     local images=(
-        "${ecr}/automation-platform-config-lcm:${platform_ver}"
-        "${ecr}/automation-gateway:${gw4_ver}"
-        "${ecr}/automation-gateway5:${gw5_ver}"
+        "$PLATFORM_IMAGE"
+        "$GATEWAY4_IMAGE"
+        "$GATEWAY5_IMAGE"
     )
 
     for img in "${images[@]}"; do
@@ -129,11 +127,12 @@ source "$PROJECT_ROOT/.env"
 
 log_section "aws ecr authentication"
 
-ECR_REGISTRY="${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}"
+# extract registry from PLATFORM_IMAGE (everything before the first /)
+ECR_REGISTRY="${PLATFORM_IMAGE%%/*}"
 
 if [ "$IMAGES_PRESENT" = true ]; then
     log_info "All required images already present locally, skipping ECR authentication"
-else
+elif [[ "$ECR_REGISTRY" == *".ecr."*".amazonaws.com" ]]; then
     log_info "Authenticating with AWS ECR..."
     if aws ecr get-login-password --region us-east-2 2>/dev/null | \
        docker login --username AWS --password-stdin "$ECR_REGISTRY" &>/dev/null; then
@@ -143,6 +142,8 @@ else
         log_info "Run: aws configure"
         exit 1
     fi
+else
+    log_info "Non-ECR registry detected ($ECR_REGISTRY), skipping AWS authentication"
 fi
 
 log_section "certificate generation"
