@@ -1,8 +1,8 @@
-## 📒 Description
+## Description
 
 <!-- What does this PR do? Why is it needed? -->
 
-## 🔍 Type of Change
+## Type of Change
 
 <!-- Mark the appropriate option with an "x" -->
 
@@ -12,15 +12,15 @@
 - [ ] Refactor
 - [ ] Chore
 
-## 🔧 Changes Made
+## Changes Made
 
 <!-- Summarize the key changes in this PR -->
 
-## 🧪 Testing
+## Testing
 
 <!-- Describe how you tested your changes -->
 
-## 📋 Checklist
+## Checklist
 
 - [ ] Code follows the project's style guidelines
 - [ ] Self-review of code has been performed
