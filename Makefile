@@ -5,7 +5,8 @@
 
 .DEFAULT_GOAL := help
 
-# load .env if exists
+# load defaults first, then .env overrides
+-include defaults.env
 -include .env
 export
 
@@ -14,7 +15,6 @@ UID ?= $(shell id -u)
 GID ?= $(shell id -g)
 
 # default values
-ECR_REGISTRY ?= 497639811223.dkr.ecr.us-east-2.amazonaws.com
 PLATFORM_PORT ?= 3000
 GATEWAY4_PORT ?= 8083
 LDAP_PORT ?= 3389
@@ -79,9 +79,10 @@ certs: ## Generate SSL certificates
 	@./scripts/generate-certificates.sh
 
 login: ## Login to AWS ECR
-	@aws ecr get-login-password --region us-east-2 | \
-		docker login --username AWS --password-stdin $(ECR_REGISTRY)
-	@echo "ECR login successful"
+	@ECR_REGISTRY=$$(echo "$(PLATFORM_IMAGE)" | cut -d'/' -f1); \
+		aws ecr get-login-password --region us-east-2 | \
+		docker login --username AWS --password-stdin "$$ECR_REGISTRY" && \
+		echo "ECR login successful for $$ECR_REGISTRY"
 
 clean: ## Stop services and remove data (destructive)
 	@echo "WARNING: This will delete all container data."
