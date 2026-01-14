@@ -1,5 +1,9 @@
 # Itential Dev Stack
 #
+# Note: This compose file uses variables from defaults.env and .env
+# Run with: docker compose --env-file defaults.env --env-file .env [command]
+# Or use Makefile targets: make up, make down, etc.
+#
 # Profiles:
 #   deps     - MongoDB + Redis only
 #   platform - MongoDB + Redis + Platform (most common)
@@ -99,7 +103,7 @@ services:
 
   platform:
     container_name: platform
-    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-platform-config-lcm:${PLATFORM_VERSION:-6}
+    image: ${PLATFORM_IMAGE:?PLATFORM_IMAGE is required - check .env file}
     platform: linux/amd64
     profiles: ["platform", "full"]
 
@@ -184,7 +188,7 @@ services:
 
   gateway4:
     container_name: gateway4
-    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway:${GATEWAY4_VERSION:-4.3.7}
+    image: ${GATEWAY4_IMAGE:?GATEWAY4_IMAGE is required - check .env file}
     platform: linux/amd64
     profiles: ["gateway4", "full"]
     user: "${UID:-1000}:${GID:-1000}"
@@ -282,7 +286,7 @@ services:
 
   gateway5:
     container_name: gateway5
-    image: ${ECR_REGISTRY:-497639811223.dkr.ecr.us-east-2.amazonaws.com}/automation-gateway5:${GATEWAY5_VERSION:-5.1.0-amd64}
+    image: ${GATEWAY5_IMAGE:?GATEWAY5_IMAGE is required - check .env file}
     platform: linux/amd64
     profiles: ["gateway5", "full"]
     entrypoint:

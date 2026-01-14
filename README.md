@@ -90,16 +90,24 @@ Configuration is managed via `.env` file. On first run, `make setup` creates thi
 | `ITENTIAL_ENCRYPTION_KEY` | 64-char hex encryption key (auto-generated) | Required |
 | `GATEWAY5_CLUSTER_ID` | Gateway Manager cluster identifier | `cluster_1` |
 
+### Image Configuration
+
+Image defaults are defined in `defaults.env` (version-controlled, single source of truth). To override, uncomment and modify in your `.env` file:
+
+```bash
+# Itential images - full URLs (supports any registry)
+PLATFORM_IMAGE=497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-platform-config-lcm:6
+GATEWAY4_IMAGE=497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-gateway:4.3.7
+GATEWAY5_IMAGE=497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-gateway5:5.1.0-amd64
+
+# Dependency versions
+MONGO_VERSION=8.0
+REDIS_VERSION=7.4
+```
+
 ### Optional Overrides
 
 ```bash
-# Image versions (defaults to latest stable)
-PLATFORM_VERSION=6
-GATEWAY4_VERSION=4.3.7
-GATEWAY5_VERSION=5.1.0-amd64
-MONGO_VERSION=8.0
-REDIS_VERSION=7.4
-
 # Ports (if defaults conflict)
 PLATFORM_PORT=3000
 GATEWAY4_PORT=8083
@@ -162,6 +170,7 @@ itential-dev-stack/
 ├── docker-compose.yml      # Unified compose configuration
 ├── .env                    # Your configuration (git-ignored)
 ├── .env.example            # Configuration template
+├── defaults.env            # Default values (version-controlled)
 ├── Makefile                # Common commands
 ├── scripts/
 │   ├── setup.sh            # First-time setup
@@ -294,7 +303,7 @@ Then run `make setup` or `make up`.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MCP_ENABLED` | Enable MCP server | `false` |
-| `MCP_TRANSPORT` | Transport mode: `stdio` or `sse` | `stdio` |
+| `MCP_TRANSPORT` | Transport mode: `sse` or `stdio` | `sse` |
 | `MCP_SSE_PORT` | Port for SSE transport | `8000` |
 | `MCP_PLATFORM_USER` | Platform username | `admin` |
 | `MCP_PLATFORM_PASSWORD` | Platform password | `admin` |
