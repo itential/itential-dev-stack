@@ -343,18 +343,18 @@ OpenBao runs with **persistent file storage**:
 Platform is automatically configured with these environment variables:
 - `ITENTIAL_VAULT_URL=http://openbao:8200`
 - `ITENTIAL_VAULT_AUTH_METHOD=token`
-- `ITENTIAL_VAULT_TOKEN=<generated-root-token>`
+- `ITENTIAL_VAULT_TOKEN=/opt/vault/token.txt` (file path, token written to `volumes/platform/vault/token.txt`)
 - `ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data`
 
 ### Quick Start
 
 After `make setup`, get your root token:
 ```bash
-# View root token
+# View root token from init keys
 cat volumes/openbao/init-keys.json | jq -r '.root_token'
 
-# Or use the token from .env
-grep ITENTIAL_VAULT_TOKEN .env
+# Or view the token file
+cat volumes/platform/vault/token.txt
 ```
 
 Write and read secrets:
