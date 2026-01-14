@@ -129,10 +129,11 @@ When `OPENBAO_ENABLED=true`, the setup script automatically:
    ```bash
    ITENTIAL_VAULT_URL=http://openbao:8200
    ITENTIAL_VAULT_AUTH_METHOD=token
-   ITENTIAL_VAULT_TOKEN=<generated-root-token>
+   ITENTIAL_VAULT_TOKEN=/opt/vault/token.txt    # File path (not raw token)
    ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data
    ITENTIAL_VAULT_READ_ONLY=false
    ```
+   The actual token is written to `volumes/platform/vault/token.txt` and mounted into the container.
 
 2. **Installs HashiCorp Vault adapter** - Clones from GitLab and runs npm install:
    ```
@@ -278,7 +279,7 @@ These are automatically set when `OPENBAO_ENABLED=true`:
 |----------|-------------|------------|
 | `ITENTIAL_VAULT_URL` | Vault API URL | `http://openbao:8200` |
 | `ITENTIAL_VAULT_AUTH_METHOD` | Authentication method | `token` |
-| `ITENTIAL_VAULT_TOKEN` | Authentication token | Generated root token |
+| `ITENTIAL_VAULT_TOKEN` | File path to token | `/opt/vault/token.txt` |
 | `ITENTIAL_VAULT_SECRETS_ENDPOINT` | KV secrets path | `secret/data` |
 | `ITENTIAL_VAULT_READ_ONLY` | Read-only mode (false enables property encryption) | `false` |
 
