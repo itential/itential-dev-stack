@@ -170,6 +170,12 @@ if [ -f "$PROJECT_ROOT/volumes/openbao/config/config.hcl" ]; then
     log_info "OpenBao config: permissions set"
 fi
 
+# create vault token directory before docker compose (prevents root ownership)
+if [ "$OPENBAO_ENABLED" = "true" ]; then
+    mkdir -p "$PROJECT_ROOT/volumes/platform/vault"
+    log_info "Vault token directory: created"
+fi
+
 log_section "starting services"
 
 # build profile list based on enabled services
