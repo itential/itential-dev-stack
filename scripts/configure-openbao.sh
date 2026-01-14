@@ -157,36 +157,55 @@ else
     log_info "KV secrets engine already enabled at secret/"
 fi
 
-# update .env with root token if OPENBAO_ENABLED
+# update .env and token file if OPENBAO_ENABLED
 if [ "$OPENBAO_ENABLED" = "true" ]; then
+
+    # token file path (Platform expects a file path, not raw token value)
+    VAULT_TOKEN_DIR="$PROJECT_ROOT/volumes/platform/vault"
+    VAULT_TOKEN_FILE="$VAULT_TOKEN_DIR/token.txt"
+
+    # ensure token directory exists
+    mkdir -p "$VAULT_TOKEN_DIR"
+
+    # write token to file (Platform reads token from this file)
+    echo "$ROOT_TOKEN" > "$VAULT_TOKEN_FILE"
+    chmod 600 "$VAULT_TOKEN_FILE"
+    log_info "Vault token written to $VAULT_TOKEN_FILE"
 
     # check if vault vars need to be added or updated
     if ! grep -q "^ITENTIAL_VAULT_URL=" "$PROJECT_ROOT/.env" 2>/dev/null; then
 
         # vault vars not present, add them
-        log_info "Updating .env with OpenBao root token..."
+        log_info "Configuring Platform Vault integration..."
 
         # NOTE: platform connects to OpenBao via Docker internal network where it always listens on 8200
         # the OPENBAO_PORT variable only affects the host port mapping for external access
-        cat >> "$PROJECT_ROOT/.env" << EOF
+        # ITENTIAL_VAULT_TOKEN is a file path - Platform reads the token from this file
+        cat >> "$PROJECT_ROOT/.env" << 'EOF'
 
 # OpenBao Platform Integration (auto-configured)
 # Platform connects via Docker internal network (always port 8200 internally)
 ITENTIAL_VAULT_URL=http://openbao:8200
 ITENTIAL_VAULT_AUTH_METHOD=token
-ITENTIAL_VAULT_TOKEN=${ROOT_TOKEN}
+ITENTIAL_VAULT_TOKEN=/opt/vault/token.txt
 ITENTIAL_VAULT_SECRETS_ENDPOINT=secret/data
 ITENTIAL_VAULT_READ_ONLY=false
 EOF
-        log_info "Platform Vault integration configured with root token"
-    elif [ "$ITENTIAL_VAULT_TOKEN" != "$ROOT_TOKEN" ]; then
-
-        # vault vars present but token doesn't match, update it
-        log_info "Updating .env with new OpenBao root token..."
-        sed -i "s|^ITENTIAL_VAULT_TOKEN=.*|ITENTIAL_VAULT_TOKEN=${ROOT_TOKEN}|" "$PROJECT_ROOT/.env"
-        log_info "Platform Vault token updated"
+        log_info "Platform Vault integration configured"
     else
-        log_info "Platform Vault integration already configured"
+        # vault vars present - ensure ITENTIAL_VAULT_TOKEN uses file path (migration for existing users)
+        CURRENT_TOKEN_VAR=$(grep "^ITENTIAL_VAULT_TOKEN=" "$PROJECT_ROOT/.env" 2>/dev/null | cut -d'=' -f2)
+        if [ "$CURRENT_TOKEN_VAR" != "/opt/vault/token.txt" ]; then
+            log_info "Updating ITENTIAL_VAULT_TOKEN to use file path..."
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s|^ITENTIAL_VAULT_TOKEN=.*|ITENTIAL_VAULT_TOKEN=/opt/vault/token.txt|" "$PROJECT_ROOT/.env"
+            else
+                sed -i "s|^ITENTIAL_VAULT_TOKEN=.*|ITENTIAL_VAULT_TOKEN=/opt/vault/token.txt|" "$PROJECT_ROOT/.env"
+            fi
+            log_info "Platform Vault token path updated (migration complete)"
+        else
+            log_info "Platform Vault integration already configured"
+        fi
     fi
 fi
 
