@@ -53,6 +53,9 @@
 # openbao - track config, ignore init keys
 /volumes/openbao/init-keys.json
 
+# vault token file (auto-generated, contains sensitive token)
+/volumes/platform/vault/
+
 # mongo data
 /dependencies/mongodb-data/*
 !/dependencies/mongodb-data/.gitkeep
