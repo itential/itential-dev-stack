@@ -93,12 +93,13 @@ services:
   # ==========================================================================
 
   # init platform-logs volume with correct ownership
+  # note: PLATFORM_UID/PLATFORM_GID can be set in .env for alternative images (e.g., flowai uses 1000)
   platform-init:
     image: alpine:latest
     profiles: ["platform", "full"]
     volumes:
       - platform-logs:/mnt
-    command: sh -c "chown -R 1001:1001 /mnt && chmod -R 755 /mnt"
+    command: sh -c "chown -R ${PLATFORM_UID:-1001}:${PLATFORM_GID:-1001} /mnt && chmod -R 755 /mnt"
     restart: "no"
 
   platform:
@@ -162,7 +163,7 @@ services:
       ITENTIAL_LOG_DIRECTORY: "/var/log/itential"
 
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/login"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/login 2>/dev/null || curl -sf http://localhost:3000/login >/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 10
