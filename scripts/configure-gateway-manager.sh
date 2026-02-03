@@ -336,11 +336,12 @@ create_gateway() {
     fi
 
     # gateway requires a group and certificate reference for link to work
+    # note: gateway_name is required by some Platform versions (e.g., flowai)
     local response http_code
     response=$(curl -s -w "\n%{http_code}" -X POST "${PLATFORM_URL}/gateway_manager/v1/gateways" \
         -H "Content-Type: application/json" \
         -b "$COOKIE_JAR" \
-        -d "{\"gateway\":{\"cluster_id\":\"${CLUSTER_ID}\",\"description\":\"Auto-configured gateway\",\"enabled\":true,\"readonly\":false,\"certificates\":[\"${CERT_ID}\"],\"groups\":[\"admin_group\"]}}" 2>/dev/null)
+        -d "{\"gateway\":{\"gateway_name\":\"${CLUSTER_ID}\",\"cluster_id\":\"${CLUSTER_ID}\",\"description\":\"Auto-configured gateway\",\"enabled\":true,\"readonly\":false,\"certificates\":[\"${CERT_ID}\"],\"groups\":[\"admin_group\"]}}" 2>/dev/null)
 
     http_code=$(echo "$response" | tail -1)
     response=$(echo "$response" | sed '$d')
