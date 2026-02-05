@@ -279,7 +279,13 @@ echo ""
 echo -e "${GREEN}Services are starting. Check status with: make status${NC}"
 echo ""
 echo "URLs:"
-echo "  Platform:  http://localhost:${PLATFORM_PORT:-3000}"
+if grep -qE '^\s+- "\$\{BIND_ADDRESS\}\$\{PLATFORM_PORT' "$PROJECT_ROOT/docker-compose.yml"; then
+    echo "  Platform:  http://localhost:${PLATFORM_PORT:-3000}"
+elif grep -qE '^\s+- "\$\{BIND_ADDRESS\}\$\{PLATFORM_HTTPS_PORT' "$PROJECT_ROOT/docker-compose.yml"; then
+    echo "  Platform:  https://localhost:${PLATFORM_HTTPS_PORT:-3443}"
+else
+    echo "  Platform:  https://localhost:${PLATFORM_HTTPS_PORT:-3443}"
+fi
 echo "             Username: admin"
 echo "             Password: admin"
 echo ""

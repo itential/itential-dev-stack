@@ -120,7 +120,8 @@ services:
       platform-init:
         condition: service_completed_successfully
     ports:
-      - "${BIND_ADDRESS}${PLATFORM_PORT:-3000}:3000"
+      # - "${BIND_ADDRESS}${PLATFORM_PORT:-3000}:3000"  # Uncomment to enable HTTP
+      - "${BIND_ADDRESS}${PLATFORM_HTTPS_PORT:-3443}:3443"
       - "${BIND_ADDRESS}8080:8080"
     volumes:
       - type: bind
@@ -154,7 +155,9 @@ services:
 
       # web server
       ITENTIAL_WEBSERVER_HTTP_PORT: 3000
+      ITENTIAL_WEBSERVER_HTTP_ENABLED: "false"
       ITENTIAL_WEBSERVER_HTTPS_PORT: 3443
+      ITENTIAL_WEBSERVER_HTTPS_ENABLED: "true"
       ITENTIAL_WEBSERVER_HTTPS_KEY: "/etc/ssl/platform/key.pem"
       ITENTIAL_WEBSERVER_HTTPS_CERT: "/etc/ssl/platform/cert.pem"
 
@@ -163,7 +166,7 @@ services:
       ITENTIAL_LOG_DIRECTORY: "/var/log/itential"
 
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/login 2>/dev/null || curl -sf http://localhost:3000/login >/dev/null"]
+      test: ["CMD-SHELL", "(wget -q --spider --no-check-certificate https://localhost:3443/login 2>/dev/null || curl -sfk https://localhost:3443/login >/dev/null) || (wget -q --spider http://localhost:3000/login 2>/dev/null || curl -sf http://localhost:3000/login >/dev/null)"]
       interval: 30s
       timeout: 10s
       retries: 10

@@ -16,6 +16,7 @@ GID ?= $(shell id -g)
 
 # default values
 PLATFORM_PORT ?= 3000
+PLATFORM_HTTPS_PORT ?= 3443
 GATEWAY4_PORT ?= 8083
 LDAP_PORT ?= 3389
 MCP_SSE_PORT ?= 8000
@@ -61,7 +62,13 @@ status: ## Show service status and URLs
 	@docker compose --profile full --profile ldap --profile mcp --profile openbao ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 	@echo "URLs:"
-	@echo "  Platform:  http://localhost:$(PLATFORM_PORT)  (admin/admin)"
+	@if grep -qE '^\s+- "\$${BIND_ADDRESS}\$${PLATFORM_PORT' docker-compose.yml; then \
+		echo "  Platform:  http://localhost:$(PLATFORM_PORT)  (admin/admin)"; \
+	elif grep -qE '^\s+- "\$${BIND_ADDRESS}\$${PLATFORM_HTTPS_PORT' docker-compose.yml; then \
+		echo "  Platform:  https://localhost:$(PLATFORM_HTTPS_PORT)  (admin/admin)"; \
+	else \
+		echo "  Platform:  https://localhost:$(PLATFORM_HTTPS_PORT)  (admin/admin)"; \
+	fi
 	@echo "  Gateway4:  http://localhost:$(GATEWAY4_PORT)  (admin@itential/admin)"
 	@if docker ps --format '{{.Names}}' | grep -q '^openldap$$'; then \
 		echo "  OpenLDAP:  localhost:$(LDAP_PORT)  (cn=admin,dc=itential,dc=io/admin)"; \
