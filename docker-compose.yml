@@ -36,7 +36,7 @@ services:
     image: mongo:${MONGO_VERSION:-8.0}
     profiles: ["deps", "platform", "full"]
     ports:
-      - "${BIND_ADDRESS}27017:27017"
+      - "${BIND_ADDRESS}${MONGO_PORT:-27017}:27017"
     volumes:
       - type: bind
         source: ./dependencies/mongodb-data
@@ -58,7 +58,7 @@ services:
     image: redis:${REDIS_VERSION:-7.4}
     profiles: ["deps", "platform", "full"]
     ports:
-      - "${BIND_ADDRESS}6379:6379"
+      - "${BIND_ADDRESS}${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -121,7 +121,7 @@ services:
         condition: service_completed_successfully
     ports:
       - "${BIND_ADDRESS}${PLATFORM_PORT:-3000}:3000"
-      - "${BIND_ADDRESS}8080:8080"
+      - "${BIND_ADDRESS}${GATEWAY_MANAGER_PORT:-8080}:8080"
     volumes:
       - type: bind
         source: ./volumes/platform/adapters
@@ -189,7 +189,7 @@ services:
 
   gateway4:
     container_name: gateway4
-    image: ${GATEWAY4_IMAGE:?GATEWAY4_IMAGE is required - check .env file}
+    image: ${GATEWAY4_IMAGE:-gateway4-not-configured}
     platform: linux/amd64
     profiles: ["gateway4", "full"]
     user: "${UID:-1000}:${GID:-1000}"
@@ -287,7 +287,7 @@ services:
 
   gateway5:
     container_name: gateway5
-    image: ${GATEWAY5_IMAGE:?GATEWAY5_IMAGE is required - check .env file}
+    image: ${GATEWAY5_IMAGE:-gateway5-not-configured}
     platform: linux/amd64
     profiles: ["gateway5", "full"]
     entrypoint:
