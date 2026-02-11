@@ -16,13 +16,24 @@ GID ?= $(shell id -g)
 
 # default values
 PLATFORM_PORT ?= 3000
+GATEWAY_MANAGER_PORT ?= 8080
+MONGO_PORT ?= 27017
+REDIS_PORT ?= 6379
 GATEWAY4_PORT ?= 8083
+GATEWAY5_PORT ?= 50051
 LDAP_PORT ?= 3389
 MCP_SSE_PORT ?= 8000
 OPENBAO_PORT ?= 8200
 
 # build profile list based on enabled services
-PROFILES := --profile full
+STACK_PROFILE ?= full
+PROFILES := --profile $(STACK_PROFILE)
+ifeq ($(GATEWAY4_ENABLED),true)
+  PROFILES += --profile gateway4
+endif
+ifeq ($(GATEWAY5_ENABLED),true)
+  PROFILES += --profile gateway5
+endif
 ifeq ($(LDAP_ENABLED),true)
   PROFILES += --profile ldap
 endif
