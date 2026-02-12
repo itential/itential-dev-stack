@@ -1,10 +1,10 @@
-# Itential - Local Development Stack
+# 🔬 Itential - Local Development Stack
 
 A local development environment for [Itential Platform](https://www.itential.com/cloud-platform/overview/) and related technologies.
 
 > **Note**: This environment is for development and testing only. Do not use in production.
 
-## Getting Started
+## ⏰ Getting Started
 
 ### 1. Prerequisites
 
@@ -64,7 +64,7 @@ make logs     # View logs (or: make logs LOG=platform)
 make status   # Check status and URLs
 ```
 
-## Stack Profiles
+## 🔍 Stack Profiles
 
 The profile system has two layers that let you run exactly what you need:
 
@@ -103,7 +103,17 @@ STACK_PROFILE=platform
 
 Both `make setup` and `make up` respect these settings automatically.
 
-## Services
+### Direct Docker Compose
+
+You can also use `docker compose` directly with profiles:
+
+```bash
+docker compose --profile platform up -d
+docker compose --profile platform --profile ldap up -d
+docker compose --profile full --profile openbao up -d
+```
+
+## 📋 Services
 
 | Service | Default URL | Credentials |
 |---------|-------------|-------------|
@@ -118,7 +128,7 @@ Both `make setup` and `make up` respect these settings automatically.
 
 > All ports are configurable via `.env` — see [Port Configuration](#port-configuration).
 
-## Configuration Reference
+## 💻 Configuration Reference
 
 All configuration is managed via `.env` (see [Getting Started](#2-configure-your-environment)).
 
@@ -181,11 +191,12 @@ Different platform images may run as different UIDs. The init container sets log
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ITENTIAL_ENCRYPTION_KEY` | 64-char hex encryption key | Auto-generated |
+| `STACK_PROFILE` | Base service profile (`full`, `platform`, `deps`) | `full` |
 | `GATEWAY5_CLUSTER_ID` | Gateway Manager cluster ID | `cluster_1` |
 | `LOG_LEVEL` | Application log level | `debug` |
 | `BIND_ADDRESS` | Network binding (`""` = all, `"127.0.0.1:"` = localhost) | `""` |
 
-## Make Commands
+## 🍚 Make Commands
 
 | Command | Description |
 |---------|-------------|
@@ -199,7 +210,7 @@ Different platform images may run as different UIDs. The init container sets log
 | `make clean` | Stop and remove all data (destructive) |
 | `make generate-key` | Generate new encryption key |
 
-## LDAP Authentication
+## 🔑 LDAP Authentication
 
 OpenLDAP provides enterprise LDAP authentication testing.
 
@@ -228,7 +239,7 @@ After setup, log in with any pre-configured user:
 For advanced configuration, see the [official documentation](https://docs.itential.com/docs/configuring-open-ldap-iap).
 </details>
 
-## MCP Server (LLM Integration)
+## 🤖 MCP Server (LLM Integration)
 
 The [MCP](https://github.com/itential/itential-mcp) server enables LLM tools (Claude Code, Claude Desktop) to interact with Itential Platform.
 
@@ -242,7 +253,7 @@ The [MCP](https://github.com/itential/itential-mcp) server enables LLM tools (Cl
 
 See [docs/itential-mcp](docs/itential-mcp/) for Claude Desktop configuration examples.
 
-## OpenBao (Secrets Management)
+## 🔐 OpenBao (Secrets Management)
 
 [OpenBao](https://openbao.org/) provides Vault-compatible secrets management.
 
@@ -283,7 +294,7 @@ If OpenBao is sealed after restart: `./scripts/configure-openbao.sh`
 
 For detailed usage, see [docs/openbao](docs/openbao/).
 
-## Gateway5 / Gateway Manager
+## 🔑 Gateway5 / Gateway Manager
 
 Gateway5 connects to Platform via Gateway Manager. `make setup` handles everything automatically:
 
@@ -294,7 +305,7 @@ Gateway5 connects to Platform via Gateway Manager. `make setup` handles everythi
 
 If automatic configuration fails, the script displays manual instructions. See [Gateway Manager docs](https://docs.itential.com/docs/iag5-deploy-container#step-3-create-gateway-manager-certificates).
 
-## Installing Adapters
+## 🔧 Installing Adapters
 
 ```bash
 cd volumes/platform/adapters/
@@ -306,7 +317,7 @@ make up  # Restart to load adapter
 
 Find adapters at [Itential Automation Marketplace](https://www.itential.com/automation-marketplace/).
 
-## Debugging
+## 🐞 Debugging
 
 ```bash
 # Shell access
@@ -322,7 +333,7 @@ docker exec -it redis redis-cli
 docker exec platform env | grep ITENTIAL
 ```
 
-## Using Podman
+## 🫛 Using Podman
 
 This project is OCI-compliant and works with Podman. The simplest approach is to install Docker CLI emulation:
 
@@ -350,7 +361,7 @@ aws ecr get-login-password --region us-east-2 | \
 ```
 </details>
 
-## File Structure
+## 🪾 File Structure
 
 ```
 itential-dev-stack/
@@ -378,7 +389,7 @@ itential-dev-stack/
     └── mongodb-data/       # MongoDB persistent data
 ```
 
-## Additional Resources
+## 📚 Additional Resources
 
 - [Platform Environment Variables](https://docs.itential.com/docs/itential-platform-properties-environment-variables)
 - [Gateway4 Configuration](https://docs.itential.com/docs/configuration-for-iag)
