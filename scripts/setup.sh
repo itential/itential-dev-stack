@@ -177,10 +177,30 @@ if [ "$OPENBAO_ENABLED" = "true" ]; then
     log_info "Vault token directory: created"
 fi
 
+# create all bind mount directories before docker compose (prevents errors)
+mkdir -p "$PROJECT_ROOT/dependencies/mongodb-data"
+mkdir -p "$PROJECT_ROOT/volumes/platform/adapters"
+mkdir -p "$PROJECT_ROOT/volumes/platform/ssl"
+mkdir -p "$PROJECT_ROOT/volumes/platform/vault"
+mkdir -p "$PROJECT_ROOT/volumes/gateway4/scripts"
+mkdir -p "$PROJECT_ROOT/volumes/gateway4/playbooks"
+mkdir -p "$PROJECT_ROOT/volumes/gateway4/ssl"
+mkdir -p "$PROJECT_ROOT/volumes/gateway5/certificates"
+mkdir -p "$PROJECT_ROOT/volumes/mcp/logs"
+mkdir -p "$PROJECT_ROOT/volumes/openbao/config"
+
 log_section "starting services"
 
 # build profile list based on enabled services
-PROFILES="--profile full"
+PROFILES="--profile ${STACK_PROFILE:-full}"
+if [ "$GATEWAY4_ENABLED" = "true" ]; then
+    PROFILES="$PROFILES --profile gateway4"
+    log_info "Gateway4 enabled"
+fi
+if [ "$GATEWAY5_ENABLED" = "true" ]; then
+    PROFILES="$PROFILES --profile gateway5"
+    log_info "Gateway5 enabled"
+fi
 if [ "$LDAP_ENABLED" = "true" ]; then
     PROFILES="$PROFILES --profile ldap"
     log_info "LDAP enabled"
