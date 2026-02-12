@@ -177,7 +177,7 @@ if [ "$OPENBAO_ENABLED" = "true" ]; then
     log_info "Vault token directory: created"
 fi
 
-# create all bind mount directories before docker compose (prevents errors)
+# create all bind mount directories before docker compose (prevents root ownership)
 mkdir -p "$PROJECT_ROOT/dependencies/mongodb-data"
 mkdir -p "$PROJECT_ROOT/volumes/platform/adapters"
 mkdir -p "$PROJECT_ROOT/volumes/platform/ssl"
@@ -188,6 +188,7 @@ mkdir -p "$PROJECT_ROOT/volumes/gateway4/ssl"
 mkdir -p "$PROJECT_ROOT/volumes/gateway5/certificates"
 mkdir -p "$PROJECT_ROOT/volumes/mcp/logs"
 mkdir -p "$PROJECT_ROOT/volumes/openbao/config"
+log_info "Bind mount directories: created"
 
 log_section "starting services"
 
