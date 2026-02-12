@@ -17,10 +17,10 @@ GID ?= $(shell id -g)
 # default values
 PLATFORM_PORT ?= 3000
 GATEWAY_MANAGER_PORT ?= 8080
-MONGO_PORT ?= 27017
-REDIS_PORT ?= 6379
 GATEWAY4_PORT ?= 8083
 GATEWAY5_PORT ?= 50051
+MONGO_PORT ?= 27017
+REDIS_PORT ?= 6379
 LDAP_PORT ?= 3389
 MCP_SSE_PORT ?= 8000
 OPENBAO_PORT ?= 8200
@@ -73,7 +73,15 @@ status: ## Show service status and URLs
 	@echo ""
 	@echo "URLs:"
 	@echo "  Platform:  http://localhost:$(PLATFORM_PORT)  (admin/admin)"
-	@echo "  Gateway4:  http://localhost:$(GATEWAY4_PORT)  (admin@itential/admin)"
+	@if docker ps --format '{{.Names}}' | grep -q '^platform$$'; then \
+		echo "  Gateway Manager: http://localhost:$(GATEWAY_MANAGER_PORT)"; \
+	fi
+	@if docker ps --format '{{.Names}}' | grep -q '^gateway4$$'; then \
+		echo "  Gateway4:  http://localhost:$(GATEWAY4_PORT)  (admin@itential/admin)"; \
+	fi
+	@if docker ps --format '{{.Names}}' | grep -q '^gateway5$$'; then \
+		echo "  Gateway5:  localhost:$(GATEWAY5_PORT)  (gRPC)"; \
+	fi
 	@if docker ps --format '{{.Names}}' | grep -q '^openldap$$'; then \
 		echo "  OpenLDAP:  localhost:$(LDAP_PORT)  (cn=admin,dc=itential,dc=io/admin)"; \
 	fi
