@@ -17,6 +17,18 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# parse args
+# --init-only: initialize, unseal, and enable KV (plus example secrets) without any
+# Platform integration. Used by the iag5-openbao target where no Platform is running.
+INIT_ONLY=false
+for arg in "$@"; do
+    case "$arg" in
+        --init-only)
+            INIT_ONLY=true
+            ;;
+    esac
+done
+
 # check for jq
 if ! command -v jq &>/dev/null; then
     log_error "jq is required but not installed"
@@ -157,8 +169,8 @@ else
     log_info "KV secrets engine already enabled at secret/"
 fi
 
-# update .env and token file if OPENBAO_ENABLED
-if [ "$OPENBAO_ENABLED" = "true" ]; then
+# update .env and token file if OPENBAO_ENABLED (skipped in init-only mode)
+if [ "$INIT_ONLY" = false ] && [ "$OPENBAO_ENABLED" = "true" ]; then
 
     # token file path (Platform expects a file path, not raw token value)
     VAULT_TOKEN_DIR="$PROJECT_ROOT/volumes/platform/vault"
@@ -210,6 +222,9 @@ EOF
 fi
 
 log_info "OpenBao configuration complete!"
+
+# everything below requires a running Platform; skip it entirely in init-only mode
+if [ "$INIT_ONLY" = false ]; then
 
 # ==========================================================================
 # VAULT ADAPTER INSTALLATION AND CONFIGURATION
@@ -443,6 +458,8 @@ fi
 
 # export ADAPTER_INSTALLED for setup.sh to detect if Platform restart is needed
 export ADAPTER_INSTALLED
+
+fi  # end Platform-dependent configuration
 
 # ==========================================================================
 # CREATE EXAMPLE SECRETS FOR TESTING MANUAL PROPERTY ENCRYPTION

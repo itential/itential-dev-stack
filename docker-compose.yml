@@ -311,7 +311,9 @@ services:
       GATEWAY_APPLICATION_WORKING_DIR: "/etc/gateway"
 
       # gw manager connection
-      GATEWAY_CONNECT_HOSTS: "platform:8080"
+      # default targets Platform's Gateway Manager; the iag5 make targets pass an
+      # empty GATEWAY5_CONNECT_HOSTS to run standalone without a manager
+      GATEWAY_CONNECT_HOSTS: "${GATEWAY5_CONNECT_HOSTS-platform:8080}"
       GATEWAY_CONNECT_CERTIFICATE_FILE: "/etc/ssl/gateway5/gw-manager.pem"
       GATEWAY_CONNECT_PRIVATE_KEY_FILE: "/etc/ssl/gateway5/gw-manager-key.pem"
       GATEWAY_CONNECT_INSECURE_TLS: "true"

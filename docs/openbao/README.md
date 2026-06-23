@@ -37,6 +37,13 @@ cat volumes/openbao/init-keys.json | jq -r '.root_token'
 grep ITENTIAL_VAULT_TOKEN .env
 ```
 
+### Without Platform
+
+To run OpenBao alongside IAG5 without the rest of the stack, use `make iag5-openbao`.
+This brings up OpenBao initialized and unsealed, but does not wire it into Platform (no
+Vault adapter, no `.env` integration). The two services run side by side. The root token
+is still saved to `volumes/openbao/init-keys.json`.
+
 ## Accessing OpenBao
 
 ### Web UI

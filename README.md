@@ -202,6 +202,8 @@ Different platform images may run as different UIDs. The init container sets log
 |---------|-------------|
 | `make setup` | First-time setup (key, certs, start, configure) |
 | `make up` | Start services |
+| `make iag5` | Deploy IAG5 (Gateway 5) standalone, no Platform |
+| `make iag5-openbao` | Deploy IAG5 + OpenBao side by side (no wiring) |
 | `make down` | Stop services |
 | `make logs` | Follow all logs (or: `make logs LOG=platform`) |
 | `make status` | Show status and URLs |
@@ -304,6 +306,34 @@ Gateway5 connects to Platform via Gateway Manager. `make setup` handles everythi
 4. Creates and enables the gateway cluster
 
 If automatic configuration fails, the script displays manual instructions. See [Gateway Manager docs](https://docs.itential.com/docs/iag5-deploy-container#step-3-create-gateway-manager-certificates).
+
+### Standalone IAG5 (no Platform)
+
+To work on or demo IAG5 without the full Platform stack, deploy it on its own:
+
+```bash
+make iag5            # IAG5 only
+make iag5-openbao    # IAG5 + OpenBao (side by side, initialized and unsealed)
+```
+
+Both targets generate certificates first and skip the Gateway Manager connection, so
+IAG5 runs without a Platform to register with. They require only the IAG5 image (no
+encryption key or `.env`); if the image is missing, the target attempts a pull and
+points you to `make login` for AWS ECR access.
+
+`make iag5-openbao` brings up OpenBao alongside IAG5 and initializes it, but does not
+wire IAG5 to consume OpenBao secrets — the two simply run together. Get the OpenBao root
+token from `volumes/openbao/init-keys.json`.
+
+Tear down with `make down` (covers IAG5 via the `full` profile). To also stop OpenBao:
+
+```bash
+docker compose --profile openbao down
+```
+
+> **Note**: Suppressing the Gateway Manager connection relies on passing an empty
+> `GATEWAY5_CONNECT_HOSTS`. Confirm against your IAG5 version if you see registration
+> attempts in `docker logs gateway5`.
 
 ## 🔧 Installing Adapters
 
