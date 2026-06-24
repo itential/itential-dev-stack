@@ -91,7 +91,7 @@ _ensure-gateway5-image:
 	}
 
 down: ## Stop all services
-	@docker compose $(PROFILES) down
+	@docker compose --profile full --profile ldap --profile mcp --profile openbao down
 
 logs: ## Follow logs (all services, or: make logs LOG=platform)
 	@docker compose logs -f $(LOG)
