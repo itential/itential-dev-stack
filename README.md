@@ -193,6 +193,7 @@ Different platform images may run as different UIDs. The init container sets log
 | `ITENTIAL_ENCRYPTION_KEY` | 64-char hex encryption key | Auto-generated |
 | `STACK_PROFILE` | Base service profile (`full`, `platform`, `deps`) | `full` |
 | `GATEWAY5_CLUSTER_ID` | Gateway Manager cluster ID | `cluster_1` |
+| `GATEWAY5_CONNECT_HOSTS` | Gateway Manager connection host(s) used by Gateway5 (must be non-empty) | `platform:8080` |
 | `LOG_LEVEL` | Application log level | `debug` |
 | `BIND_ADDRESS` | Network binding (`""` = all, `"127.0.0.1:"` = localhost) | `""` |
 
