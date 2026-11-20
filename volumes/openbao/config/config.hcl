@@ -1,8 +1,10 @@
 # OpenBao Server Configuration
-# File-based storage for persistent secrets across container restarts
+# Raft integrated storage for persistent secrets across container restarts
+# (the file backend was removed in OpenBao 2.7)
 
-storage "file" {
-  path = "/openbao/data"
+storage "raft" {
+  path    = "/openbao/data"
+  node_id = "node1"
 }
 
 listener "tcp" {
@@ -11,5 +13,6 @@ listener "tcp" {
 }
 
 api_addr      = "http://0.0.0.0:8200"
+cluster_addr  = "http://127.0.0.1:8201"
 ui            = true
 disable_mlock = true
