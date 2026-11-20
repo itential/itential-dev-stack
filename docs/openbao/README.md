@@ -292,12 +292,17 @@ These are automatically set when `OPENBAO_ENABLED=true`:
 
 ## Persistent Storage
 
-OpenBao uses **file-based persistent storage**:
+OpenBao uses **Raft integrated storage** (single node):
 
 1. **Data persists** - Secrets survive container restarts in the `openbao-data` Docker volume
 2. **Initialization** - Required on first run (handled automatically by `make setup`)
 3. **Unsealing** - Required after restart (handled automatically by `configure-openbao.sh`)
 4. **Keys stored locally** - Root token and unseal keys saved in `volumes/openbao/init-keys.json`
+
+> **Upgrading**: OpenBao 2.7 removed the `file` storage backend that earlier versions of this
+> stack used. Raft cannot read data written by the file backend, so existing `openbao-data`
+> volumes do not migrate. Run `make clean` and `make setup` to start fresh (this removes any
+> secrets stored in OpenBao).
 
 ### After Container Restart
 
